@@ -213,24 +213,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.centralwidget)
 
         self.statusBar().showMessage("Welcome", 2000)
-        """ ----- DATA X Y prompt (listing)  ------"""
-        self.label_list_X = QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
-        self.label_list_X.setText("Data X")
-        self.label_list_X.setGeometry(580, 270, 100, 20)
+        """ ----- DATA X Y prompt (table)  ------"""
 
-        self.list_data_X = QtWidgets.QListView(self.centralwidget)
-        self.list_data_X.setGeometry(QtCore.QRect(580, 300, 80, 141))
-        self.list_data_X.setAlternatingRowColors(True)
-        self.list_data_X.setObjectName("Data view X")
-
-        self.label_list_Y = QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
-        self.label_list_Y.setText("Data Y")
-        self.label_list_Y.setGeometry(680, 270, 100, 20)
-
-        self.list_data_Y = QtWidgets.QListView(self.centralwidget)
-        self.list_data_Y.setGeometry(QtCore.QRect(680, 300, 80, 141))
-        self.list_data_Y.setAlternatingRowColors(True)
-        self.list_data_Y.setObjectName("Data view Y")
 
 
         """--------------- CASOVAC cteni dat -----------------"""
