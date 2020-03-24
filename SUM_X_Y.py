@@ -261,17 +261,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def about(self):
         QtWidgets.QMessageBox.about(self, "About",
-                                    """embedding_in_qt5.py example
-Copyright 2005 Florent Rougon, 2006 Darren Dale, 2015 Jens H Nielsen
-
-This program is a simple example of a Qt5 application embedding matplotlib
-canvases.
-
-It may be used and modified with no restriction; raw copies as well as
-modified versions may be distributed without limitation.
-
-This is modified from the embedding in qt4 example to show the difference
-between qt4 and qt5"""
+                                    """This is testing branch of software.
+                                    
+                                    Programme is expecting data in this order : X x_data Y y_data
+                                    
+                                    Where X $ Y are basic symbols and x_data/y_data are numeric data after dividion in STM32
+                                    
+                                    PSD software is a part of Diploma thesis"""
                                     )
 
 
