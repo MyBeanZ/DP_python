@@ -16,7 +16,8 @@ import random
 import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXAgg, GTKAgg, QT4Agg
-from PyQt5 import QtCore, QtWidgets
+import PySide2
+from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -58,9 +59,9 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
         self.X_data = 0
         self.Y_data = 0
-        self.x_old = []
-        self.y_old = []
         self.d_len = 30
+        self.x_old = np.zeros(self.d_len)
+        self.y_old = np.zeros(self.d_len)
 
         self.frame_x = [1, -1, -1, 1, 1]
         self.frame_y = [-1, -1, 1, 1, -1]
@@ -82,14 +83,15 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
         self.axes.plot(self.frame_x1, self.frame_y1, color='#8f8483', linestyle='--', linewidth=1)
         self.axes.plot(self.frame_x2, self.frame_y2, color='#8f8483', linestyle='--', linewidth=1)
+
         self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', label='stare pozice', markersize=1)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
 
-        self.x_old.append(self.X_data)  # spojeni novych a starych dat
-        self.y_old.append(self.Y_data)
+        self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
+        self.y_old = np.append(self.y_old, self.Y_data)
         if len(self.x_old) > self.d_len:  # zobrazeni max 10 minulych prvku
-            self.x_old.pop(0)
-            self.y_old.pop(0)
+            self.x_old = np.delete(self.x_old, 0)
+            self.y_old = np.delete(self.y_old, 0)
         self.draw()
 
 
@@ -122,12 +124,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """--------------------------------------GUI ----------------------------------------------------------------------------"""
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        self.resize(900, 880)
+        #self.resize(900, 880)
+        self.setGeometry(300, 150, 900, 880)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("PSD - test")
 
         """ ---- PROMENNE -------"""
         self.s_time = 120
+        self.port_name = 'COM5'
 
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
@@ -143,6 +147,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """----------QT widget layout -----------------"""
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
+
         """ graf quad  """
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(30, 40, 500, 400))
@@ -192,7 +197,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
         self.butt_start.setGeometry(QtCore.QRect(650, 70, 93, 28))
         self.butt_start.setCheckable(True)
-        self.butt_start.setChecked(False)
+        self.butt_start.setChecked(False)  #pocatecni stav STOP => setChecked(False)
         self.butt_start.setEnabled(False)
         self.butt_start.setObjectName("pushButton")
         self.butt_start.clicked.connect(self.clicked)
@@ -207,15 +212,35 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.centralwidget.setFocus()
         self.setCentralWidget(self.centralwidget)
 
-        self.statusBar().showMessage("Testovaci software", 2000)
+        self.statusBar().showMessage("Welcome", 2000)
+        """ ----- DATA X Y prompt (listing)  ------"""
+        self.label_list_X = QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
+        self.label_list_X.setText("Data X")
+        self.label_list_X.setGeometry(580, 270, 100, 20)
+
+        self.list_data_X = QtWidgets.QListView(self.centralwidget)
+        self.list_data_X.setGeometry(QtCore.QRect(580, 300, 80, 141))
+        self.list_data_X.setAlternatingRowColors(True)
+        self.list_data_X.setObjectName("Data view X")
+
+        self.label_list_Y = QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
+        self.label_list_Y.setText("Data Y")
+        self.label_list_Y.setGeometry(680, 270, 100, 20)
+
+        self.list_data_Y = QtWidgets.QListView(self.centralwidget)
+        self.list_data_Y.setGeometry(QtCore.QRect(680, 300, 80, 141))
+        self.list_data_Y.setAlternatingRowColors(True)
+        self.list_data_Y.setObjectName("Data view Y")
+
 
         """--------------- CASOVAC cteni dat -----------------"""
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.read_data)
-        self.timer.start(self.s_time)
+        #self.timer.start(self.s_time)
 
     """ostatni fce"""
-    def read_data(self):
+    def read_data(self): # Tato fce bezi nepretrzite - z duvodu kontroli pripojeni
+
         try:
             data = (self.s.readline())
             data_str = data.decode("utf-8")
@@ -225,7 +250,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             y_data = float(data_list[2])
             print(sum_data, x_data, y_data)
 
-            if sum_data == 0:
+            if sum_data == 0:  #ochrana deleni nulou
                 x_div = 0
                 y_div = 0
             else:
@@ -244,45 +269,57 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.quad.X_data = x_div
             self.quad.Y_data = y_div
         except:
-            self.statusBar().showMessage("Unable to read - Disconnected", 2000)
+            self.statusBar().showMessage("Unable to read - Disconnected", 3000)
             self.butt_conn.setEnabled(True)
+            self.butt_start.setEnabled(False)
+            self.butt_start.setChecked(False)
+            self.butt_start.setText("Start")
+
             self.timer.stop()  # zastaveni fce read
             self.quad.timer.stop()  # zasatveni update vykreslovani
             self.x_time.timer.stop()
             self.y_time.timer.stop()
 
+        cond = self.butt_start.isChecked()
+
+
+
     def clicked(self):
         cond = self.butt_start.isChecked()
         if not (cond):
             self.butt_start.setText("Start")
-            self.timer.stop()  # zastaveni fce read
             self.quad.timer.stop() # zasatveni update vykreslovani
             self.x_time.timer.stop()
             self.y_time.timer.stop()
+            self.statusBar().showMessage("Stopped", 2000)
 
         else:
             self.butt_start.setText("Stop")
-            self.timer.start(self.s_time)
             self.quad.timer.start(self.s_time)
             self.x_time.timer.start(self.s_time)
             self.y_time.timer.start(self.s_time)
+            self.statusBar().showMessage("Started", 2000)
 
 
     def connect (self):
         try:
-            """ ----- inicializace serioveho prenosu ----------"""
-            self.s = serial.Serial('COM5', baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
+            """ ----- pripojeni serioveho portu ----------"""
+            self.s = serial.Serial(self.port_name, baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
             print(self.s.name)
-            self.statusBar().showMessage(self.s.name, 2000)
+            self.timer.start(self.s_time)
+            stat_con = "Connected to: " + self.s.name
+            self.statusBar().showMessage(self.s.name, 3000)
             self.butt_start.setEnabled(True)
             self.butt_conn.setEnabled(False)
+            self.statusBar().showMessage(stat_con, 2000)
         except:
             self.statusBar().showMessage("Unable to connect", 2000)
 
 
 
-    """ automaticky volajici funkce """
+    """  funkce z Menu"""
     def fileQuit(self):
+        self.s.close()
         self.close()
 
     def closeEvent(self, ce):
@@ -292,8 +329,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def about(self):
         QtWidgets.QMessageBox.about(self, "About",
-                                    """This is testing version of PSD, this version expect data in this order
-                                    SUM, X, Y"""
+                                    """
+    This is testing version of PSD, this version expect data in this order: SUM, X, Y.
+    
+    The PSD application is part of the Diploma thesis."""
                                     )
 
 
