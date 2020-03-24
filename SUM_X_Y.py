@@ -214,31 +214,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """ostatni fce"""
     def read_data(self):
         data = (self.s.readline())
-        data_str = data.decode("utf-8")
-        data_list = data_str.rsplit(" ")
-        sum_data = float(data_list[0])
-        x_data = float(data_list[1])
-        y_data = float(data_list[2])
-        print(sum_data, x_data, y_data)
+        testing = data[len(data) - 3]
+        if testing != 32:  # mezera (ASCII - 32) po Wait
+            data_str = data.decode("utf-8")
+            data_list = data_str.rsplit(" ")
+            x_data = float(data_list[1])
+            y_data = float(data_list[3])
+            print(x_data, y_data)
 
-        if sum_data == 0:
-            x_div = 0
-            y_div = 0
-        else:
-            x_div = (x_data/sum_data)
-            y_div = (y_data/sum_data)
+            if (x_data > 1.5 or x_data < -1.5):
+                self.statusBar().showMessage("Output saturated", 2000)
+                x_data = 0
+            if (y_data > 1.5 or y_data < -1.5):
+                self.statusBar().showMessage("Output saturated", 2000)
+                y_data = 0
 
-        # if (x_data > 1.5 or x_data < -1.5):
-        #     self.statusBar().showMessage("Output saturated", 2000)
-        #     x_data = 0
-        # if (y_data > 1.5 or y_data < -1.5):
-        #     self.statusBar().showMessage("Output saturated", 2000)
-        #     y_data = 0
-
-        self.x_time.x_y_new = x_div
-        self.y_time.x_y_new = y_div
-        self.quad.X_data = x_div
-        self.quad.Y_data = y_div
+            self.x_time.x_y_new = x_data
+            self.y_time.x_y_new = y_data
+            self.quad.X_data = x_data
+            self.quad.Y_data = y_data
 
     def clicked(self):
         cond = self.pushButton.isChecked()
