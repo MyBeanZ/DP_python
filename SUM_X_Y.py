@@ -192,7 +192,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
         self.butt_start.setGeometry(QtCore.QRect(650, 70, 93, 28))
         self.butt_start.setCheckable(True)
-        self.butt_start.setChecked(True)
+        self.butt_start.setChecked(False)
         self.butt_start.setEnabled(False)
         self.butt_start.setObjectName("pushButton")
         self.butt_start.clicked.connect(self.clicked)
@@ -292,17 +292,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def about(self):
         QtWidgets.QMessageBox.about(self, "About",
-                                    """embedding_in_qt5.py example
-Copyright 2005 Florent Rougon, 2006 Darren Dale, 2015 Jens H Nielsen
-
-This program is a simple example of a Qt5 application embedding matplotlib
-canvases.
-
-It may be used and modified with no restriction; raw copies as well as
-modified versions may be distributed without limitation.
-
-This is modified from the embedding in qt4 example to show the difference
-between qt4 and qt5"""
+                                    """This is testing version of PSD, this version expect data in this order
+                                    SUM, X, Y"""
                                     )
 
 
