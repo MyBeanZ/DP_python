@@ -16,8 +16,8 @@ import random
 import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXAgg, GTKAgg, QT4Agg
-import PySide2
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -59,7 +59,7 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
         self.X_data = 0
         self.Y_data = 0
-        self.d_len = 30
+        self.d_len = 10
         self.x_old = np.zeros(self.d_len)
         self.y_old = np.zeros(self.d_len)
 
@@ -125,12 +125,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         #self.resize(900, 880)
-        self.setGeometry(300, 150, 900, 880)
+        self.setGeometry(300, 150, 900, 860)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("PSD - test")
 
         """ ---- PROMENNE -------"""
-        self.s_time = 120
+        self.s_time = 100
         self.port_name = 'COM5'
 
         """----lista menu ------"""
@@ -195,7 +195,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         """tlacitko STart/STOP"""
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
-        self.butt_start.setGeometry(QtCore.QRect(650, 70, 93, 28))
+        self.butt_start.setGeometry(QtCore.QRect(585, 440, 93, 28))
         self.butt_start.setCheckable(True)
         self.butt_start.setChecked(False)  #pocatecni stav STOP => setChecked(False)
         self.butt_start.setEnabled(False)
@@ -204,7 +204,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.butt_start.setText("Start")
         """tlacitko CONNECT """
         self.butt_conn = QtWidgets.QPushButton(self.centralwidget)
-        self.butt_conn.setGeometry(QtCore.QRect(650, 120, 93, 28))
+        self.butt_conn.setGeometry(QtCore.QRect(685, 440, 93, 28))
         self.butt_conn.setEnabled(True)
         self.butt_conn.setText("Connect")
         self.butt_conn.clicked.connect(self.connect)
@@ -214,9 +214,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.statusBar().showMessage("Welcome", 2000)
         """ ----- DATA X Y prompt (table)  ------"""
-
-
-
+        self.tableWidget = QTableWidget(self.centralwidget)
+        self.tableWidget.setRowCount(self.quad.d_len)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setColumnWidth(0, 108)
+        self.tableWidget.setColumnWidth(1, 108)
+        self.tableWidget.setGeometry(550, 40, 270, 350)
+        self.tableWidget.setHorizontalHeaderItem(0, QTableWidgetItem("X coordinates"))
+        self.tableWidget.setHorizontalHeaderItem(1, QTableWidgetItem("Y coordinates"))
         """--------------- CASOVAC cteni dat -----------------"""
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.read_data)
@@ -264,7 +269,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.x_time.timer.stop()
             self.y_time.timer.stop()
 
-        cond = self.butt_start.isChecked()
+        for x in range(self.quad.d_len):
+            self.tableWidget.setItem(x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
+            self.tableWidget.setItem(x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
+
 
 
 
