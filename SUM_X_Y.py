@@ -129,8 +129,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """ ---- PROMENNE -------"""
         self.s_time = 120
 
-
-
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
         self.file_menu.addAction('&Quit', self.fileQuit,
@@ -149,8 +147,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(30, 40, 500, 400))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+
         self.quad = MplQuad(self.verticalLayoutWidget, width=5, height=4, dpi=100) # dc - graf XY
-        self.quad.s_time_mpl = self.s_time
+        self.quad.timer.stop()
+
         self.layout_plot = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.layout_plot.setContentsMargins(0, 0, 0, 0)
         self.layout_plot.setObjectName("layout_plot")
@@ -161,7 +161,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
 
         self.x_time = MplTwo(self.verticalLayoutWidget_2, width=5, height=2, dpi=100)  # dc - graf XY
-        self.x_time.s_time_mpl = self.s_time
+        self.x_time.timer.stop()
 
         self.label_X = QtWidgets.QLabel(self.verticalLayoutWidget_2)  # self pred label kvuli pristupu z cele tridy
         self.label_X.setText("X samples in time")
@@ -177,7 +177,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
 
         self.y_time = MplTwo(self.verticalLayoutWidget_3, width=5, height=2, dpi=100)  # dc - graf XY
-        self.y_time.s_time_mpl = self.s_time
+        self.y_time.timer.stop()
 
         self.label_Y = QtWidgets.QLabel(self.verticalLayoutWidget_3)  # self pred label kvuli pristupu z cele tridy
         self.label_Y.setText("Y samples in time")
@@ -189,22 +189,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayout_3.addWidget(self.y_time)
 
         """tlacitko STart/STOP"""
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(650, 70, 93, 28))
-        self.pushButton.setCheckable(True)
-        self.pushButton.setChecked(False)
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton.clicked.connect(self.clicked)
-        self.pushButton.setText("Stop")
+        self.butt_start = QtWidgets.QPushButton(self.centralwidget)
+        self.butt_start.setGeometry(QtCore.QRect(650, 70, 93, 28))
+        self.butt_start.setCheckable(True)
+        self.butt_start.setChecked(True)
+        self.butt_start.setEnabled(False)
+        self.butt_start.setObjectName("pushButton")
+        self.butt_start.clicked.connect(self.clicked)
+        self.butt_start.setText("Start")
+        """tlacitko CONNECT """
+        self.butt_conn = QtWidgets.QPushButton(self.centralwidget)
+        self.butt_conn.setGeometry(QtCore.QRect(650, 120, 93, 28))
+        self.butt_conn.setEnabled(True)
+        self.butt_conn.setText("Connect")
+        self.butt_conn.clicked.connect(self.connect)
 
         self.centralwidget.setFocus()
         self.setCentralWidget(self.centralwidget)
 
         self.statusBar().showMessage("Testovaci software", 2000)
-
-        """ ----- inicializace serioveho prenosu ----------"""
-        self.s = serial.Serial('COM5', baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
-        print(self.s.name)
 
         """--------------- CASOVAC cteni dat -----------------"""
         self.timer = QtCore.QTimer(self)
@@ -213,48 +216,70 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     """ostatni fce"""
     def read_data(self):
-        data = (self.s.readline())
-        data_str = data.decode("utf-8")
-        data_list = data_str.rsplit(" ")
-        sum_data = float(data_list[0])
-        x_data = float(data_list[1])
-        y_data = float(data_list[2])
-        print(sum_data, x_data, y_data)
+        try:
+            data = (self.s.readline())
+            data_str = data.decode("utf-8")
+            data_list = data_str.rsplit(" ")
+            sum_data = float(data_list[0])
+            x_data = float(data_list[1])
+            y_data = float(data_list[2])
+            print(sum_data, x_data, y_data)
 
-        if sum_data == 0:
-            x_div = 0
-            y_div = 0
-        else:
-            x_div = (x_data/sum_data)
-            y_div = (y_data/sum_data)
+            if sum_data == 0:
+                x_div = 0
+                y_div = 0
+            else:
+                x_div = (x_data/sum_data)
+                y_div = (y_data/sum_data)
 
-        # if (x_data > 1.5 or x_data < -1.5):
-        #     self.statusBar().showMessage("Output saturated", 2000)
-        #     x_data = 0
-        # if (y_data > 1.5 or y_data < -1.5):
-        #     self.statusBar().showMessage("Output saturated", 2000)
-        #     y_data = 0
+            # if (x_data > 1.5 or x_data < -1.5):
+            #     self.statusBar().showMessage("Output saturated", 2000)
+            #     x_data = 0
+            # if (y_data > 1.5 or y_data < -1.5):
+            #     self.statusBar().showMessage("Output saturated", 2000)
+            #     y_data = 0
 
-        self.x_time.x_y_new = x_div
-        self.y_time.x_y_new = y_div
-        self.quad.X_data = x_div
-        self.quad.Y_data = y_div
+            self.x_time.x_y_new = x_div
+            self.y_time.x_y_new = y_div
+            self.quad.X_data = x_div
+            self.quad.Y_data = y_div
+        except:
+            self.statusBar().showMessage("Unable to read - Disconnected", 2000)
+            self.butt_conn.setEnabled(True)
+            self.timer.stop()  # zastaveni fce read
+            self.quad.timer.stop()  # zasatveni update vykreslovani
+            self.x_time.timer.stop()
+            self.y_time.timer.stop()
 
     def clicked(self):
-        cond = self.pushButton.isChecked()
-        if cond:
-            self.pushButton.setText("Start")
+        cond = self.butt_start.isChecked()
+        if not (cond):
+            self.butt_start.setText("Start")
             self.timer.stop()  # zastaveni fce read
             self.quad.timer.stop() # zasatveni update vykreslovani
             self.x_time.timer.stop()
             self.y_time.timer.stop()
 
         else:
-            self.pushButton.setText("Stop")
+            self.butt_start.setText("Stop")
             self.timer.start(self.s_time)
-            self.quad.timer.start(self.s_time) # zasatveni update vykreslovani
+            self.quad.timer.start(self.s_time)
             self.x_time.timer.start(self.s_time)
             self.y_time.timer.start(self.s_time)
+
+
+    def connect (self):
+        try:
+            """ ----- inicializace serioveho prenosu ----------"""
+            self.s = serial.Serial('COM5', baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
+            print(self.s.name)
+            self.statusBar().showMessage(self.s.name, 2000)
+            self.butt_start.setEnabled(True)
+            self.butt_conn.setEnabled(False)
+        except:
+            self.statusBar().showMessage("Unable to connect", 2000)
+
+
 
     """ automaticky volajici funkce """
     def fileQuit(self):
