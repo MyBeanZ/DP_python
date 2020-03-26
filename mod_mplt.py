@@ -29,16 +29,16 @@ class MyMplCanvas(FigureCanvas):
 
 
 class MplQuad(MyMplCanvas):  # --------------------------------------------- HLAVNI GRAF-------------------------
-    """A canvas that updates itself every second with a new plot."""
+
     """self pridat pred timer, tak aby by pristupny"""
     def __init__(self, *args, **kwargs):
         MyMplCanvas.__init__(self, *args, **kwargs)
 
         self.X_data = 0
         self.Y_data = 0
-        self.d_len = 10
-        self.x_old = np.zeros(self.d_len)
-        self.y_old = np.zeros(self.d_len)
+        self.tab_len = 30
+        self.x_old = np.zeros(self.tab_len)
+        self.y_old = np.zeros(self.tab_len)
 
         self.frame_x = [1, -1, -1, 1, 1]
         self.frame_y = [-1, -1, 1, 1, -1]
@@ -66,7 +66,7 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
         self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
         self.y_old = np.append(self.y_old, self.Y_data)
-        if len(self.x_old) > self.d_len:  # zobrazeni max 10 minulych prvku
+        if len(self.x_old) > self.tab_len:  # zobrazeni max 10 minulych prvku
             self.x_old = np.delete(self.x_old, 0)
             self.y_old = np.delete(self.y_old, 0)
         self.draw()

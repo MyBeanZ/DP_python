@@ -1,14 +1,4 @@
 
-# embedding_in_qt5.py --- Simple Qt5 application embedding matplotlib canvases
-#
-# Copyright (C) 2005 Florent Rougon
-#               2006 Darren Dale
-#               2015 Jens H Nielsen
-#
-# This file is an example program for matplotlib. It may be used and
-# modified with no restriction; raw copies as well as modified versions
-# may be distributed without limitation.
-
 from __future__ import unicode_literals
 import sys
 import os
@@ -18,7 +8,8 @@ matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXA
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
 import serial
-from module_Mplt import MplQuad, MplTwo
+from mod_mplt import MplQuad, MplTwo
+from mod_pref import Preferences_win
 
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
@@ -30,7 +21,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """--------------------------------------GUI ----------------------------------------------------------------------------"""
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        #self.resize(900, 880)
         self.setGeometry(300, 130, 900, 860)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("PSD - test")
@@ -38,15 +28,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """ ---- PROMENNE -------"""
         self.s_time = 100
         self.port_name = 'COM5'
+        self.disp_set = 'rel' # / 'abs'
+        self.d_len = 100
+        self.tab_len = 30
 
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
+
+        self.file_menu.addAction('&Preferences', self.prefClick,
+                                 QtCore.Qt.CTRL + QtCore.Qt.Key_R)
+        self.file_menu.addAction('&Save data', self.fileQuit,
+                                 QtCore.Qt.CTRL + QtCore.Qt.Key_T)
         self.file_menu.addAction('&Quit', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
-        self.file_menu.addAction('&Preferences', self.fileQuit,
-                                 QtCore.Qt.CTRL + QtCore.Qt.Key_R)
-        self.file_menu.addAction('&Text file', self.fileQuit,
-                                 QtCore.Qt.CTRL + QtCore.Qt.Key_T)
+
         self.menuBar().addMenu(self.file_menu)
 
         self.help_menu = QtWidgets.QMenu('&Help', self)
@@ -63,6 +58,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.centralwidget.setFocus()  # pohled na central widget - Qapp velka plocha
         self.setCentralWidget(self.centralwidget)
         self.statusBar().showMessage("Welcome", 3000)
+
+        """ ----------------------------preferences window--------------------- WORK IN PROGRESS------"""
+        self.window = QtWidgets.QMainWindow()
+        self.prefWin = Preferences_win()
+        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name )
 
         """ graf quad  -------------"""
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
@@ -176,7 +176,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         """ ----- DATA X Y prompt (table)  ------"""
         self.tableWidget = QTableWidget(self.centralwidget)
-        self.tableWidget.setRowCount(self.quad.d_len)
+        self.tableWidget.setRowCount(self.quad.tab_len)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setColumnWidth(0, 108)
         self.tableWidget.setColumnWidth(1, 108)
@@ -189,8 +189,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         #self.timer.start(self.s_time)
 
     """-----------------------------------FUNKCE/METODY TRID GUI ----------------------------------------------------"""
-    def read_data(self): # Tato fce bezi nepretrzite - z duvodu kontroli pripojeni
+    def read_data(self): # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni
+        """AKTUALIZACE promennych z preferences"""
+        self.d_len = self.prefWin.p_d_len
+        self.s_time = self.prefWin.p_s_time
+        self.port_name = self.prefWin.p_port_name
+        self.disp_set = self.prefWin.p_disp_set
+        """nutna podmika pro prekopani tabulky"""
+        if self.tab_len != self.prefWin.p_tab_len:
+            self.tableWidget.setRowCount(self.prefWin.p_tab_len)
+            self.tab_len = self.prefWin.p_tab_len
 
+
+        self.x_time.d_len = self.d_len
+        self.y_time.d_len = self.d_len
+        self.quad.tab_len = self.tab_len
+        """END AKTUALIZACE promennych z preferences"""
         try:
             data = (self.s.readline())
             data_str = data.decode("utf-8")
@@ -206,13 +220,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             else:
                 x_div = (x_data/sum_data)
                 y_div = (y_data/sum_data)
-
-            # if (x_data > 1.5 or x_data < -1.5):
-            #     self.statusBar().showMessage("Output saturated", 2000)
-            #     x_data = 0
-            # if (y_data > 1.5 or y_data < -1.5):
-            #     self.statusBar().showMessage("Output saturated", 2000)
-            #     y_data = 0
 
             self.x_time.x_y_new = x_div
             self.y_time.x_y_new = y_div
@@ -231,11 +238,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.quad.timer.stop()  # zasatveni update vykreslovani
             self.x_time.timer.stop()
             self.y_time.timer.stop()
+        """ PLNENI TABULKY"""
+        for x in range(self.quad.tab_len):
+            self.tableWidget.setItem((self.quad.tab_len-1) - x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
+            self.tableWidget.setItem((self.quad.tab_len-1) - x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
 
-        for x in range(self.quad.d_len):
-            self.tableWidget.setItem(x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
-            self.tableWidget.setItem(x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
 
+
+    """END READ FCE"""
 
 
     """-----------------start/stop fce -----------------"""
@@ -284,7 +294,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.butt_start.setEnabled(False)
             self.butt_conn.setText("Connect")
 
-
+    def prefClick(self):
+        self.window.show()
 
 
     """  ------------------ funkce z Menu --------------------"""
@@ -307,7 +318,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
 qApp = QtWidgets.QApplication(sys.argv)
-
 aw = ApplicationWindow()
 #aw.setWindowTitle("%s" % progname)  # nastavi titulku na nazev souboru
 aw.show()
