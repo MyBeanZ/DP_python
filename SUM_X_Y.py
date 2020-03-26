@@ -12,15 +12,11 @@
 from __future__ import unicode_literals
 import sys
 import os
-import random
 import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXAgg, GTKAgg, QT4Agg
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-import numpy as np
 import serial
 from module_Mplt import MplQuad, MplTwo
 
@@ -52,6 +48,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.file_menu.addAction('&Text file', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_T)
         self.menuBar().addMenu(self.file_menu)
+
         self.help_menu = QtWidgets.QMenu('&Help', self)
         self.menuBar().addSeparator()
         self.menuBar().addMenu(self.help_menu)
