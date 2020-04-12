@@ -23,6 +23,7 @@ class MyMplCanvas(FigureCanvas):
 
         """ ---- PROMENNE -------"""
         self.s_time_mpl = 100  #inicializace
+        self.s_time_mpl_old = 100
 
     def compute_initial_figure(self):
         pass
@@ -56,12 +57,18 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
 
     def update_figure(self):
+        if len(self.x_old) != self.tab_len:
+            self.x_old = np.zeros(self.tab_len)
+            self.y_old = np.zeros(self.tab_len)
+        # if self.s_time_mpl != self.s_time_mpl_old:
+        #     self.timer.start(self.s_time_mpl)
+        #     self.s_time_mpl_old = self.s_time_mpl
         self.axes.cla()
         self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
         self.axes.plot(self.frame_x1, self.frame_y1, color='#8f8483', linestyle='--', linewidth=1)
         self.axes.plot(self.frame_x2, self.frame_y2, color='#8f8483', linestyle='--', linewidth=1)
 
-        self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', label='stare pozice', markersize=1)
+        self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle = ':', label='stare pozice', markersize=2)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
 
         self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
@@ -76,7 +83,7 @@ class MplTwo(MyMplCanvas):  #---------------------------------------- DOLNI GRAF
     def __init__(self, *args, **kwargs):
         MyMplCanvas.__init__(self, *args, **kwargs)
         """------- PROMENNE ----------"""
-        self.d_len = 100
+        self.d_len = 100    # prvky v tabulce
         self.x_y_old = np.zeros(self.d_len)
         self.x_y_new = 0
 
@@ -85,6 +92,12 @@ class MplTwo(MyMplCanvas):  #---------------------------------------- DOLNI GRAF
         self.timer.start(self.s_time_mpl)
 
     def update_figure_two(self):
+        if len(self.x_y_old) != self.d_len: #Indikace zmeny delky vzorku v Case
+            self.x_y_old = np.zeros(self.d_len)
+        # if self.s_time_mpl != self.s_time_mpl_old:
+        #     self.timer.start(self.s_time_mpl)
+        #     self.s_time_mpl_old = self.s_time_mpl
+
         self.axes.cla()
         x1 = np.linspace(0, self.d_len, self.d_len, endpoint=False)
         self.axes.plot(x1, self.x_y_old, 'r')

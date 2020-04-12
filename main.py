@@ -193,7 +193,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """AKTUALIZACE promennych z preferences"""
         self.d_len = self.prefWin.p_d_len
         self.s_time = self.prefWin.p_s_time
+        if self.port_name != self.prefWin.p_port_name:
+            self.s.close()
+            self.quad.timer.stop()  # zasatveni update vykreslovani
+            self.x_time.timer.stop()
+            self.y_time.timer.stop()
+            self.quad.timer.stop()
+            self.connect()
         self.port_name = self.prefWin.p_port_name
+
         self.disp_set = self.prefWin.p_disp_set
         """nutna podmika pro prekopani tabulky"""
         if self.tab_len != self.prefWin.p_tab_len:
@@ -204,6 +212,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.x_time.d_len = self.d_len
         self.y_time.d_len = self.d_len
         self.quad.tab_len = self.tab_len
+
+        # self.quad.s_time_mpl = self.s_time
+        # self.x_time.s_time_mpl = self.s_time
+        # self.y_time.s_time_mpl = self.s_time
+
+        self.timer.setInterval(self.s_time)
+        self.quad.timer.setInterval(self.s_time)
+        self.x_time.timer.setInterval(self.s_time)
+        self.y_time.timer.setInterval(self.s_time)
         """END AKTUALIZACE promennych z preferences"""
         try:
             data = (self.s.readline())
