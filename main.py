@@ -64,7 +64,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         """ graf quad  -------------"""
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(30, 40, 500, 400))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(25, 40, 510, 400))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
 
         self.quad = MplQuad(self.verticalLayoutWidget, width=5, height=4, dpi=100) # dc - graf XY
@@ -78,11 +78,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         font_time = QtGui.QFont()
         font_time.setPointSize(9)
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(30, 500, 400, 300))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(25, 510, 400, 300))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
 
         self.x_time = MplTwo(self.verticalLayoutWidget_2, width=5, height=2, dpi=100)  # dc - graf XY
         self.x_time.timer.stop()
+        self.x_time.ylab = 'X'
 
         self.label_X = QtWidgets.QLabel(self.verticalLayoutWidget_2)  # self pred label kvuli pristupu z cele tridy
         self.label_X.setText("X samples in time")
@@ -95,10 +96,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayout_2.addWidget(self.x_time)
         """graf Y v case - LAYOUT --------------------"""
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(450, 500, 400, 300))
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(460, 510, 400, 300))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
 
         self.y_time = MplTwo(self.verticalLayoutWidget_3, width=5, height=2, dpi=100)  # dc - graf XY
+        self.y_time.ylab = 'Y'
         self.y_time.timer.stop()
 
         self.label_Y = QtWidgets.QLabel(self.verticalLayoutWidget_3)  # self pred label kvuli pristupu z cele tridy
@@ -114,7 +116,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """ ----------------------------preferences window--------------------- WORK IN PROGRESS------"""
         self.window = QtWidgets.QMainWindow()
         self.prefWin = Preferences_win()
-        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name )
+        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name)
 
         self.window_txt = QtWidgets.QMainWindow()
         self.txtWin = Txt_win()
@@ -187,7 +189,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setColumnWidth(0, 108)
         self.tableWidget.setColumnWidth(1, 108)
-        self.tableWidget.setGeometry(550, 40, 270, 350)
+        self.tableWidget.setGeometry(580, 40, 270, 350)
         self.tableWidget.setHorizontalHeaderItem(0, QTableWidgetItem("X coordinates"))
         self.tableWidget.setHorizontalHeaderItem(1, QTableWidgetItem("Y coordinates"))
         """--------------- CASOVAC cteni dat -----------------"""
@@ -209,7 +211,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.connect()
         self.port_name = self.prefWin.p_port_name
 
-        self.disp_set = self.prefWin.p_disp_set
+        self.disp_set = self.prefWin.p_disp_set  # --- bastaveni disp - abs/rel
+        self.quad.disp_set_plt = self.prefWin.p_disp_set
+        self.x_time.disp_set_plt = self.prefWin.p_disp_set
+        self.y_time.disp_set_plt = self.prefWin.p_disp_set
         """nutna podmika pro prekopani tabulky"""
         if self.tab_len != self.prefWin.p_tab_len:
             self.tableWidget.setRowCount(self.prefWin.p_tab_len)
@@ -219,6 +224,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.x_time.d_len = self.d_len
         self.y_time.d_len = self.d_len
         self.quad.tab_len = self.tab_len
+
+        self.port_name = self.prefWin.p_port_name
 
         # self.quad.s_time_mpl = self.s_time
         # self.x_time.s_time_mpl = self.s_time
@@ -245,10 +252,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 x_div = (x_data/sum_data)
                 y_div = (y_data/sum_data)
 
-            self.x_time.x_y_new = x_div
-            self.y_time.x_y_new = y_div
-            self.quad.X_data = x_div
-            self.quad.Y_data = y_div
+            if self.disp_set == 'abs':
+                val_343 = 3.43
+            else:
+                val_343 = 1
+
+            self.x_time.x_y_new = x_div * val_343
+            self.y_time.x_y_new = y_div * val_343
+            self.quad.X_data = x_div* val_343
+            self.quad.Y_data = y_div* val_343
         except:
             self.statusBar().showMessage("Unable to read - Disconnected", 3000)
             self.lab_stat.setText("Disconnected")
@@ -294,7 +306,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.statusBar().showMessage("Started", 2000)
 
     """-----------------------connect ---------------------"""
-    def connect (self):
+    def connect(self):
+        self.port_name = self.prefWin.p_port_name
         cond = self.butt_conn.isChecked()
         if cond:
             try:
@@ -331,7 +344,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     """  ------------------ funkce z Menu --------------------"""
     def fileQuit(self):
-        self.s.close()
+        try:
+            self.s.close()
+        except:
+            pass
         self.window_txt.close()
         self.window.close()
         self.close()

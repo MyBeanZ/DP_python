@@ -144,7 +144,7 @@ class Preferences_win(object):
     def Set_port(self):
         name = self.text_port.text()
         print(str(name))
-        self.p_port = name
+        self.p_port_name = name
 
 
 

@@ -24,6 +24,8 @@ class MyMplCanvas(FigureCanvas):
         """ ---- PROMENNE -------"""
         self.s_time_mpl = 100  #inicializace
         self.s_time_mpl_old = 100
+        self.disp_set_plt = 'rel'
+        self.val_343 = 3.43
 
     def compute_initial_figure(self):
         pass
@@ -41,13 +43,6 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.x_old = np.zeros(self.tab_len)
         self.y_old = np.zeros(self.tab_len)
 
-        self.frame_x = [1, -1, -1, 1, 1]
-        self.frame_y = [-1, -1, 1, 1, -1]
-        self.frame_x1 = [0, 0]
-        self.frame_y1 = [1, -1]
-        self.frame_y2 = [0, 0]
-        self.frame_x2 = [1, -1]
-
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_figure)
         self.timer.start(self.s_time_mpl)
@@ -63,6 +58,22 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         # if self.s_time_mpl != self.s_time_mpl_old:
         #     self.timer.start(self.s_time_mpl)
         #     self.s_time_mpl_old = self.s_time_mpl
+        if self.disp_set_plt == 'abs':
+            self.val_343 = 3.43
+            Y_label = "Y coord. [mm]"
+            X_label = "X coord. [mm]"
+        else:
+            self.val_343 = 1
+            Y_label = "Y coord. [-]"
+            X_label = "X coord. [-]"
+
+        self.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
+        self.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
+        self.frame_x1 = [0, 0]
+        self.frame_y1 = [self.val_343, -self.val_343]
+        self.frame_y2 = [0, 0]
+        self.frame_x2 = [self.val_343, -self.val_343]
+
         self.axes.cla()
         self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
         self.axes.plot(self.frame_x1, self.frame_y1, color='#8f8483', linestyle='--', linewidth=1)
@@ -70,6 +81,9 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
         self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle = ':', label='stare pozice', markersize=2)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
+
+        self.axes.set_ylabel(Y_label)
+        self.axes.set_xlabel(X_label)
 
         self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
         self.y_old = np.append(self.y_old, self.Y_data)
@@ -90,6 +104,7 @@ class MplTwo(MyMplCanvas):  #---------------------------------------- DOLNI GRAF
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_figure_two)
         self.timer.start(self.s_time_mpl)
+        self.ylab = 'X/Y'
 
     def update_figure_two(self):
         if len(self.x_y_old) != self.d_len: #Indikace zmeny delky vzorku v Case
@@ -97,10 +112,15 @@ class MplTwo(MyMplCanvas):  #---------------------------------------- DOLNI GRAF
         # if self.s_time_mpl != self.s_time_mpl_old:
         #     self.timer.start(self.s_time_mpl)
         #     self.s_time_mpl_old = self.s_time_mpl
-
+        if self.disp_set_plt == 'abs':
+            Y_label =  self.ylab + " coord. [mm]"
+        else:
+            Y_label =  self.ylab + " coord. [-]"
         self.axes.cla()
         x1 = np.linspace(0, self.d_len, self.d_len, endpoint=False)
         self.axes.plot(x1, self.x_y_old, 'r')
+        self.axes.set_ylabel(Y_label)
+        self.axes.set_xlabel("Time [samples]")
         self.draw()
 
         self.x_y_old = np.append(self.x_y_old, self.x_y_new) # pripoji nakonec
