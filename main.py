@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
 import serial
 from mod_mplt import MplQuad, MplTwo
 from mod_pref import Preferences_win
+from mod_txt import Txt_win
 
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
@@ -37,7 +38,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.file_menu.addAction('&Preferences', self.prefClick,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_R)
-        self.file_menu.addAction('&Save data', self.fileQuit,
+        self.file_menu.addAction('&Save data', self.prefTxt,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_T)
         self.file_menu.addAction('&Quit', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
@@ -59,10 +60,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.statusBar().showMessage("Welcome", 3000)
 
-        """ ----------------------------preferences window--------------------- WORK IN PROGRESS------"""
-        self.window = QtWidgets.QMainWindow()
-        self.prefWin = Preferences_win()
-        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name )
+
 
         """ graf quad  -------------"""
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
@@ -112,6 +110,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayout_3.setContentsMargins(0, 50, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.verticalLayout_3.addWidget(self.y_time)
+
+        """ ----------------------------preferences window--------------------- WORK IN PROGRESS------"""
+        self.window = QtWidgets.QMainWindow()
+        self.prefWin = Preferences_win()
+        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name )
+
+        self.window_txt = QtWidgets.QMainWindow()
+        self.txtWin = Txt_win()
+        self.txtWin.setupUi(self.window_txt, self.quad.x_old, self.quad.y_old)
 
         """tlacitko STart/STOP --------- tlacitko CONNECT """
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
@@ -260,6 +267,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.tableWidget.setItem((self.quad.tab_len-1) - x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
             self.tableWidget.setItem((self.quad.tab_len-1) - x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
 
+        """Aktualizace dat pro vytvoreni TXT"""
+        self.txtWin.data_test_x = self.quad.x_old
+        self.txtWin.data_test_y = self.quad.y_old
+
 
 
     """END READ FCE"""
@@ -314,11 +325,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def prefClick(self):
         self.window.show()
 
+    def prefTxt(self):
+        self.window_txt.show()
+
 
     """  ------------------ funkce z Menu --------------------"""
     def fileQuit(self):
         self.s.close()
+        self.window_txt.close()
+        self.window.close()
         self.close()
+
 
     def closeEvent(self, ce):
         self.fileQuit()
