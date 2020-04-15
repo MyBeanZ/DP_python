@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import sys
 import os
 import matplotlib
-# Make sure that we are using QT5
+
 matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXAgg, GTKAgg, QT4Agg
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
@@ -11,6 +11,7 @@ import serial
 from mod_mplt import MplQuad, MplTwo
 from mod_pref import Preferences_win
 from mod_txt import Txt_win
+import numpy as np
 
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
@@ -22,16 +23,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """--------------------------------------GUI ----------------------------------------------------------------------------"""
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        self.setGeometry(300, 130, 900, 860)
+        self.setGeometry(300, 130, 900, 880)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("PSD - test")
 
-        """ ---- PROMENNE -------"""
-        self.s_time = 100
+        """ --------------------- PROMENNE ------------------------"""
+        self.s_time = 100  #perioda vzorkovani
         self.port_name = 'COM5'
         self.disp_set = 'rel' # / 'abs'
         self.d_len = 100
         self.tab_len = 30
+        self.val_343 = 1
+        self.draw_enable = 0
 
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
@@ -51,40 +54,52 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.help_menu.addAction('&About', self.about)
 
-        """----------QT widget layout -----------------"""
+        """----------------------Central Widget - Base ----------------------------"""
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
-
-        """-----others -----------"""
         self.centralwidget.setFocus()  # pohled na central widget - Qapp velka plocha
         self.setCentralWidget(self.centralwidget)
         self.statusBar().showMessage("Welcome", 3000)
 
-
-
-        """ graf quad  -------------"""
+        """   -----------------  graf QUAD  layout-------------"""
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(25, 40, 510, 400))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(40, 40, 510, 400))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
 
-        self.quad = MplQuad(self.verticalLayoutWidget, width=5, height=4, dpi=100) # dc - graf XY
-        self.quad.timer.stop()
+        self.quad = MplQuad(self.verticalLayoutWidget, width=5, height=4, dpi=90) # dc - graf XY
 
         self.layout_plot = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.layout_plot.setContentsMargins(0, 0, 0, 0)
         self.layout_plot.setObjectName("layout_plot")
         self.layout_plot.addWidget(self.quad)
-        """graf X v case - LAYOUT -----------------"""
-        font_time = QtGui.QFont()
-        font_time.setPointSize(9)
+
+        font_lab = QtGui.QFont()
+        font_lab.setPointSize(9)
+        self.Y_label = QtWidgets.QLabel(self.centralwidget)
+        self.Y_label.setGeometry(48, 40, 70, 20)
+        self.Y_label.setText("coord. Y")
+        self.Y_label.setFont(font_lab)
+
+        self.Y_label_2 = QtWidgets.QLabel(self.centralwidget)
+        self.Y_label_2.setGeometry(60, 58, 50, 20)
+        self.Y_label_2.setText("[-]")
+        self.Y_label_2.setFont(font_lab)
+
+        self.X_label = QtWidgets.QLabel(self.centralwidget)
+        self.X_label.setGeometry(255, 418, 90, 20)
+        self.X_label.setText("coord. X [-]")
+        self.X_label.setFont(font_lab)
+
+        """   -----------------  graf X v case - LAYOUT -----------------"""
+
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(25, 510, 400, 300))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(40, 510, 400, 300))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
 
-        self.x_time = MplTwo(self.verticalLayoutWidget_2, width=5, height=2, dpi=100)  # dc - graf XY
-        self.x_time.timer.stop()
-        self.x_time.ylab = 'X'
+        self.x_time = MplTwo(self.verticalLayoutWidget_2, width=3, height=2, dpi=90)  # dc - graf XY
 
+        font_time = QtGui.QFont()
+        font_time.setPointSize(9)
         self.label_X = QtWidgets.QLabel(self.verticalLayoutWidget_2)  # self pred label kvuli pristupu z cele tridy
         self.label_X.setText("X samples in time")
         self.label_X.setFont(font_time)
@@ -94,14 +109,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayout_2.setContentsMargins(0, 50, 0, 0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.verticalLayout_2.addWidget(self.x_time)
-        """graf Y v case - LAYOUT --------------------"""
+
+        self.X_label_time = QtWidgets.QLabel(self.centralwidget)
+        self.X_label_time.setGeometry(43, 560, 110, 20)
+        self.X_label_time.setText("coord. X [-]")
+        self.X_label_time.setFont(font_lab)
+
+        self.time_label_x = QtWidgets.QLabel(self.centralwidget)
+        self.time_label_x.setGeometry(200, 810, 90, 20)
+        self.time_label_x.setText("Time [ms]")
+        self.time_label_x.setFont(font_lab)
+        """   -----------------   graf Y v case - LAYOUT --------------------"""
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(460, 510, 400, 300))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
 
-        self.y_time = MplTwo(self.verticalLayoutWidget_3, width=5, height=2, dpi=100)  # dc - graf XY
-        self.y_time.ylab = 'Y'
-        self.y_time.timer.stop()
+        self.y_time = MplTwo(self.verticalLayoutWidget_3, width=6, height=2, dpi=90)  # dc - graf XY
 
         self.label_Y = QtWidgets.QLabel(self.verticalLayoutWidget_3)  # self pred label kvuli pristupu z cele tridy
         self.label_Y.setText("Y samples in time")
@@ -113,7 +136,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.verticalLayout_3.addWidget(self.y_time)
 
-        """ ----------------------------preferences window--------------------- WORK IN PROGRESS------"""
+        self.Y_label_time = QtWidgets.QLabel(self.centralwidget)
+        self.Y_label_time.setGeometry(43+420, 560, 110, 20)
+        self.Y_label_time.setText("coord. Y [-]")
+        self.Y_label_time.setFont(font_lab)
+
+        self.time_label_Y = QtWidgets.QLabel(self.centralwidget)
+        self.time_label_Y.setGeometry(200+420, 810, 90, 20)
+        self.time_label_Y.setText("Time [ms]")
+        self.time_label_Y.setFont(font_lab)
+
+        """ ----------------------------preferences window---------------------------"""
         self.window = QtWidgets.QMainWindow()
         self.prefWin = Preferences_win()
         self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name)
@@ -192,58 +225,109 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tableWidget.setGeometry(580, 40, 270, 350)
         self.tableWidget.setHorizontalHeaderItem(0, QTableWidgetItem("X coordinates"))
         self.tableWidget.setHorizontalHeaderItem(1, QTableWidgetItem("Y coordinates"))
-        """--------------- CASOVAC cteni dat -----------------"""
+        """--------------- CASOVAC cteni dat - inicializace -----------------"""
         self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.read_data)
-        #self.timer.start(self.s_time)
+        self.timer.timeout.connect(self.Time_update)
 
     """-----------------------------------FUNKCE/METODY TRID GUI ----------------------------------------------------"""
-    def read_data(self): # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni
+    def Time_update(self):
+
+        """labely grafů"""
+        if self.draw_enable == 1:
+            self.quad.update_figure()
+            self.x_time.update_figure_two()
+            self.y_time.update_figure_two()
+        self.update_data()
+        self.read_data()
+
+    def update_data(self):  # fce, ktera aktualizuje parametry GUI (TABULKA, PROMENNE, LABELY)
         """AKTUALIZACE promennych z preferences"""
-        self.d_len = self.prefWin.p_d_len
-        self.s_time = self.prefWin.p_s_time
+        """         Adaptivni osa Time      """
+        if (self.d_len != self.prefWin.p_d_len) or (self.s_time != self.prefWin.p_s_time):  # prekeresleni a ukladani pouze pri zmene
+            self.d_len = self.prefWin.p_d_len
+            self.s_time = self.prefWin.p_s_time  # cas pro rychlost cteni
+            self.x_time.s_time = self.prefWin.p_s_time  # cas pro grafy Time
+            self.y_time.s_time = self.prefWin.p_s_time
+            self.x_time.d_len = self.d_len  # pocet vzorku pro grafy Time
+            self.y_time.d_len = self.d_len
+
+            if (self.d_len*self.s_time) > 9000:
+                self.time_label_Y.setText("Time [s]")
+                self.time_label_x.setText("Time [s]")
+                self.x_time.s_time = self.prefWin.p_s_time/1000  # cas pro grafy Time
+                self.y_time.s_time = self.prefWin.p_s_time/1000
+            else:
+                self.time_label_Y.setText("Time [ms]")
+                self.time_label_x.setText("Time [ms]")
+
+            self.x_time.x_y_old = np.zeros(self.d_len)      #Reset Time - pri zmene
+            self.y_time.x_y_old = np.zeros(self.d_len)
+
         if self.port_name != self.prefWin.p_port_name:
             self.s.close()
-            self.quad.timer.stop()  # zasatveni update vykreslovani
-            self.x_time.timer.stop()
-            self.y_time.timer.stop()
-            self.quad.timer.stop()
             self.connect()
         self.port_name = self.prefWin.p_port_name
+
+        if self.disp_set != self.prefWin.p_disp_set:  # reaguje na zmenu
+            if self.prefWin.p_disp_set == 'abs':
+                self.Y_label_2.setText("[mm]")
+                self.X_label.setText("coord. X [mm]")
+                self.Y_label_time.setText("coord. Y [mm]")
+                self.X_label_time.setText("coord. X [mm]")
+                self.val_343 = 3.43
+            else:
+                self.Y_label_2.setText("[-]")
+                self.X_label.setText("coord. X [-]")
+                self.Y_label_time.setText("coord. Y [-]")
+                self.X_label_time.setText("coord. X [-]")
+                self.val_343 = 1
+
+            self.quad.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
+            self.quad.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
+            self.quad.frame_x1 = [0, 0]
+            self.quad.frame_y1 = [self.val_343, -self.val_343]
+            self.quad.frame_y2 = [0, 0]
+            self.quad.frame_x2 = [self.val_343, -self.val_343]
+
+            self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
+            self.quad.y_old = np.zeros(self.tab_len)
+            self.x_time.x_y_old = np.zeros(self.d_len)
+            self.y_time.x_y_old = np.zeros(self.d_len)
 
         self.disp_set = self.prefWin.p_disp_set  # --- bastaveni disp - abs/rel
         self.quad.disp_set_plt = self.prefWin.p_disp_set
         self.x_time.disp_set_plt = self.prefWin.p_disp_set
         self.y_time.disp_set_plt = self.prefWin.p_disp_set
+        """Zmena labelu - rel/abs"""
+
+
         """nutna podmika pro prekopani tabulky"""
-        if self.tab_len != self.prefWin.p_tab_len:
-            self.tableWidget.setRowCount(self.prefWin.p_tab_len)
+        if self.tab_len != self.prefWin.p_tab_len:   # tab_len stara hosnota/ p_tab_len nova hodnota
             self.tab_len = self.prefWin.p_tab_len
+            self.tableWidget.setRowCount(self.prefWin.p_tab_len)  #  Prenastaveni velikosti tabulky
+            self.quad.x_old = np.zeros(self.tab_len)     #  Vytvoreni vektoru o prislusne velikosti
+            self.quad.y_old = np.zeros(self.tab_len)
+            self.quad.tab_len = self.tab_len
+        """ PLNENI TABULKY"""
+        for x in range(self.quad.tab_len):
+            self.tableWidget.setItem((self.quad.tab_len-1) - x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
+            self.tableWidget.setItem((self.quad.tab_len-1) - x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
 
-
-        self.x_time.d_len = self.d_len
-        self.y_time.d_len = self.d_len
-        self.quad.tab_len = self.tab_len
-
-        self.port_name = self.prefWin.p_port_name
-
-        # self.quad.s_time_mpl = self.s_time
-        # self.x_time.s_time_mpl = self.s_time
-        # self.y_time.s_time_mpl = self.s_time
+        """Aktualizace dat pro vytvoreni TXT"""
+        self.txtWin.data_test_x = self.x_time.x_y_old
+        self.txtWin.data_test_y = self.y_time.x_y_old
 
         self.timer.setInterval(self.s_time)
-        self.quad.timer.setInterval(self.s_time)
-        self.x_time.timer.setInterval(self.s_time)
-        self.y_time.timer.setInterval(self.s_time)
-        """END AKTUALIZACE promennych z preferences"""
+
+    def read_data(self):        # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni Serioveho portu
         try:
-            data = (self.s.readline())
+            data = (self.s.readline())  # cteni z portu
             data_str = data.decode("utf-8")
             data_list = data_str.rsplit(" ")
             sum_data = float(data_list[0])
             x_data = float(data_list[1])
             y_data = float(data_list[2])
-            print(sum_data, x_data, y_data)
+            print(sum_data, x_data, y_data)  # vypis do konzole debugging
 
             if sum_data == 0:  #ochrana deleni nulou
                 x_div = 0
@@ -266,43 +350,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.lab_stat.setText("Disconnected")
             self.lab_stat.setStyleSheet('color: red')
             self.butt_conn.setEnabled(True)
+            self.butt_conn.setChecked(True)
             self.butt_start.setEnabled(False)
             self.butt_start.setChecked(False)
             self.butt_start.setText("Start")
-
-            self.timer.stop()  # zastaveni fce read
-            self.quad.timer.stop()  # zasatveni update vykreslovani
-            self.x_time.timer.stop()
-            self.y_time.timer.stop()
-        """ PLNENI TABULKY"""
-        for x in range(self.quad.tab_len):
-            self.tableWidget.setItem((self.quad.tab_len-1) - x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
-            self.tableWidget.setItem((self.quad.tab_len-1) - x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
-
-        """Aktualizace dat pro vytvoreni TXT"""
-        self.txtWin.data_test_x = self.quad.x_old
-        self.txtWin.data_test_y = self.quad.y_old
-
-
-
-    """END READ FCE"""
-
+            self.s.close()
+            self.timer.stop()  # zastaveni fce update
 
     """-----------------start/stop fce -----------------"""
     def clicked(self):
         cond = self.butt_start.isChecked()
         if not (cond):
             self.butt_start.setText("Start")
-            self.quad.timer.stop() # zasatveni update vykreslovani
-            self.x_time.timer.stop()
-            self.y_time.timer.stop()
+            self.draw_enable = 0
             self.statusBar().showMessage("Stopped", 2000)
 
         else:
             self.butt_start.setText("Stop")
-            self.quad.timer.start(self.s_time)
-            self.x_time.timer.start(self.s_time)
-            self.y_time.timer.start(self.s_time)
+            self.draw_enable = 1
             self.statusBar().showMessage("Started", 2000)
 
     """-----------------------connect ---------------------"""
@@ -318,7 +383,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 stat_con = "Connected to: " + self.s.name
                 self.statusBar().showMessage(self.s.name, 3000)
                 self.butt_start.setEnabled(True)
-                #self.butt_conn.setChecked(True)
                 self.butt_conn.setText("Disconnect")
                 self.lab_stat.setText(str(self.s.name))
                 self.lab_stat.setStyleSheet('color: green')

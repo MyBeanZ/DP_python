@@ -123,11 +123,6 @@ class Txt_win(object):
                 self.decimal = 4
 
 
-
-
-
-
-
 if __name__ == "__main__":  # pro testovani
     import sys
     test_data = [30, 80 , 89, 998.09890, 7]

@@ -1,9 +1,9 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-"""------------------------------------------ DEFINICE TRID pro vykresleni garfu------------------------------------------------------"""
+"""----------------------------- DEFINICE TRID pro vykresleni garfu----------------------------------------------"""
 class MyMplCanvas(FigureCanvas):
     """---------------------- MATERSKA TRIDA  - v podstate QWidget ---------------------"""
 
@@ -42,37 +42,28 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.tab_len = 30
         self.x_old = np.zeros(self.tab_len)
         self.y_old = np.zeros(self.tab_len)
-
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_figure)
-        self.timer.start(self.s_time_mpl)
-
-    def compute_initial_figure(self):  # inicializace
-        pass
-
-
-    def update_figure(self):
-        if len(self.x_old) != self.tab_len:
-            self.x_old = np.zeros(self.tab_len)
-            self.y_old = np.zeros(self.tab_len)
-        # if self.s_time_mpl != self.s_time_mpl_old:
-        #     self.timer.start(self.s_time_mpl)
-        #     self.s_time_mpl_old = self.s_time_mpl
-        if self.disp_set_plt == 'abs':
-            self.val_343 = 3.43
-            Y_label = "Y coord. [mm]"
-            X_label = "X coord. [mm]"
-        else:
-            self.val_343 = 1
-            Y_label = "Y coord. [-]"
-            X_label = "X coord. [-]"
-
+        self.val_343 = 1
         self.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
         self.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
         self.frame_x1 = [0, 0]
         self.frame_y1 = [self.val_343, -self.val_343]
         self.frame_y2 = [0, 0]
         self.frame_x2 = [self.val_343, -self.val_343]
+
+    def compute_initial_figure(self):  # inicializace
+        pass
+
+    def update_figure(self):
+        if len(self.x_old) != self.tab_len:  # Reset pri zmene parametru
+            self.x_old = np.zeros(self.tab_len)
+            self.y_old = np.zeros(self.tab_len)
+
+        self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
+        self.y_old = np.append(self.y_old, self.Y_data)
+
+        if len(self.x_old) > (self.tab_len):  # zobrazeni max "10" minulych prvku
+            self.x_old = np.delete(self.x_old, 0)
+            self.y_old = np.delete(self.y_old, 0)
 
         self.axes.cla()
         self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
@@ -82,45 +73,26 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle = ':', label='stare pozice', markersize=2)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
 
-        self.axes.set_ylabel(Y_label)
-        self.axes.set_xlabel(X_label)
-
-        self.x_old = np.append(self.x_old, self.X_data)  # spojeni novych a starych dat
-        self.y_old = np.append(self.y_old, self.Y_data)
-        if len(self.x_old) > self.tab_len:  # zobrazeni max 10 minulych prvku
-            self.x_old = np.delete(self.x_old, 0)
-            self.y_old = np.delete(self.y_old, 0)
         self.draw()
 
 
-class MplTwo(MyMplCanvas):  #---------------------------------------- DOLNI GRAFY ------------------------------#
+class MplTwo(MyMplCanvas):   # ----------------------- DOLNI GRAFY -------------------------#
     def __init__(self, *args, **kwargs):
         MyMplCanvas.__init__(self, *args, **kwargs)
         """------- PROMENNE ----------"""
-        self.d_len = 100    # prvky v tabulce
+        self.d_len = 100    # pocet prvku v grafu (Time samples)
         self.x_y_old = np.zeros(self.d_len)
         self.x_y_new = 0
-
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_figure_two)
-        self.timer.start(self.s_time_mpl)
-        self.ylab = 'X/Y'
+        self.s_time = 100   # perioda vzorkovani (ms)
 
     def update_figure_two(self):
-        if len(self.x_y_old) != self.d_len: #Indikace zmeny delky vzorku v Case
+        if len(self.x_y_old) != self.d_len: # Indikace zmeny delky vzorku v Case - RESET vzorku
             self.x_y_old = np.zeros(self.d_len)
-        # if self.s_time_mpl != self.s_time_mpl_old:
-        #     self.timer.start(self.s_time_mpl)
-        #     self.s_time_mpl_old = self.s_time_mpl
-        if self.disp_set_plt == 'abs':
-            Y_label =  self.ylab + " coord. [mm]"
-        else:
-            Y_label =  self.ylab + " coord. [-]"
+
         self.axes.cla()
-        x1 = np.linspace(0, self.d_len, self.d_len, endpoint=False)
+        x1 = np.linspace(0, self.d_len*self.s_time, self.d_len, endpoint=False)
         self.axes.plot(x1, self.x_y_old, 'r')
-        self.axes.set_ylabel(Y_label)
-        self.axes.set_xlabel("Time [samples]")
+
         self.draw()
 
         self.x_y_old = np.append(self.x_y_old, self.x_y_new) # pripoji nakonec
