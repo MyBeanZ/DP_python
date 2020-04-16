@@ -52,31 +52,43 @@ class Txt_win(object):
         self.butt_sep.setGeometry(inside_coor[0] + 140, inside_coor[1]+ 35+25, 35, 20)
         self.butt_sep.clicked.connect(self.create_sep)
 
+        self.label_val_sepp = QtWidgets.QLabel(self.centralwidget)
+        self.label_val_sepp.setGeometry(QtCore.QRect(inside_coor[0] + 140 + 50, inside_coor[1]+ 35+25, 50, 20))
+        self.label_val_sepp.setText('"' + self.separator + '"')
+
         """ Widgety Pocet column """
         self.label_column = QtWidgets.QLabel(self.centralwidget)
-        self.label_column.setGeometry(inside_coor[0], inside_coor[1] + 35 + 25 + 25, 90, 20)
+        self.label_column.setGeometry(inside_coor[0], inside_coor[1] + 35 + 25 + 23, 90, 20)
         self.label_column.setText("No. of columns:")
 
         self.text_column = QLineEdit(self.centralwidget)
-        self.text_column.setGeometry(inside_coor[0] + 100, inside_coor[1] + 35 + 25 + 25, 30, 20)
+        self.text_column.setGeometry(inside_coor[0] + 100, inside_coor[1] + 35 + 25 + 23, 30, 20)
         self.text_column.setPlaceholderText('0')
 
         self.butt_column = QtWidgets.QPushButton("Set", self.centralwidget)
-        self.butt_column.setGeometry(inside_coor[0] + 140, inside_coor[1]+ 35+25+25, 35, 20)
+        self.butt_column.setGeometry(inside_coor[0] + 140, inside_coor[1]+ 35+25+23, 35, 20)
         self.butt_column.clicked.connect(self.create_col)
+
+        self.label_val_column = QtWidgets.QLabel(self.centralwidget)
+        self.label_val_column.setGeometry(QtCore.QRect(inside_coor[0] + 140 + 50, inside_coor[1]+ 35+25+23, 50, 20))
+        self.label_val_column.setText(str(self.columns))
 
         """ Widgety Pocet Decimals """
         self.label_dec = QtWidgets.QLabel(self.centralwidget)
-        self.label_dec.setGeometry(inside_coor[0], inside_coor[1] + 35 + 25 + 25 +25, 90, 20)
+        self.label_dec.setGeometry(inside_coor[0], inside_coor[1] + 35 + 25 + 23 +23, 90, 20)
         self.label_dec.setText("No. of decimals:")
 
         self.text_dec = QLineEdit(self.centralwidget)
-        self.text_dec.setGeometry(inside_coor[0] + 100, inside_coor[1] + 35 + 25 + 25+25, 30, 20)
+        self.text_dec.setGeometry(inside_coor[0] + 100, inside_coor[1] + 35 + 25 + 23+23, 30, 20)
         self.text_dec.setPlaceholderText('4')
 
         self.butt_dec = QtWidgets.QPushButton("Set", self.centralwidget)
-        self.butt_dec.setGeometry(inside_coor[0] + 140, inside_coor[1]+ 35+25+25+25, 35, 20)
+        self.butt_dec.setGeometry(inside_coor[0] + 140, inside_coor[1]+ 35+25+23+23, 35, 20)
         self.butt_dec.clicked.connect(self.create_dec)
+
+        self.label_val_dec = QtWidgets.QLabel(self.centralwidget)
+        self.label_val_dec.setGeometry(QtCore.QRect(inside_coor[0] + 140 + 50, inside_coor[1]+ 35+25+23+23, 50, 20))
+        self.label_val_dec.setText(str(self.decimal))
 
 
     def create_txt(self):
@@ -105,22 +117,35 @@ class Txt_win(object):
         file_txt.close()
 
     def create_sep(self):
-        if self.text_sep.text():
-            self.separator = self.text_sep.text()
+        self.separator = self.text_sep.text()
+        self.label_val_sepp.setText('"' + self.separator + '"')
+        self.text_sep.clear()
 
     def create_col(self):
-        if self.text_column.text():
+        if self.text_column.text() == "":
+            self.label_val_column.setText(str(self.columns))
+            self.label_val_column.setStyleSheet('color: black')
+        else:
             try:
                 self.columns = int(self.text_column.text())
             except:
-                self.columns = 0
+                self.label_val_column.setText("NaN")
+                self.label_val_column.setStyleSheet('color: red')
+                #self.columns = 0
+        self.text_column.clear()
 
     def create_dec(self):
-        if self.text_dec.text():
+        if self.text_dec.text() == "":
+            self.label_val_dec.setText(str(self.decimal))
+            self.label_val_dec.setStyleSheet('color: black')
+        else:
             try:
                 self.decimal = int(self.text_dec.text())
             except:
-                self.decimal = 4
+                self.label_val_dec.setText("NaN")
+                self.label_val_dec.setStyleSheet('color: red')
+                #self.decimal = 4
+        self.text_dec.clear()
 
 
 if __name__ == "__main__":  # pro testovani

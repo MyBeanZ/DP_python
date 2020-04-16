@@ -35,6 +35,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tab_len = 30
         self.val_343 = 1
         self.draw_enable = 0
+        self.con_enable = True
 
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
@@ -162,7 +163,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.butt_start.setChecked(False)  #pocatecni stav STOP => setChecked(False)
         self.butt_start.setEnabled(False)
         self.butt_start.setObjectName("pushButton")
-        self.butt_start.clicked.connect(self.clicked)
+        self.butt_start.clicked.connect(self.clicked_st)
         self.butt_start.setText("Start")
 
         self.butt_conn = QtWidgets.QPushButton(self.centralwidget)
@@ -349,16 +350,19 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.statusBar().showMessage("Unable to read - Disconnected", 3000)
             self.lab_stat.setText("Disconnected")
             self.lab_stat.setStyleSheet('color: red')
+
+            self.butt_conn.setText("Connect")
             self.butt_conn.setEnabled(True)
-            self.butt_conn.setChecked(True)
+            self.con_enable = True
             self.butt_start.setEnabled(False)
             self.butt_start.setChecked(False)
             self.butt_start.setText("Start")
+            self.draw_enable = 0
             self.s.close()
             self.timer.stop()  # zastaveni fce update
 
     """-----------------start/stop fce -----------------"""
-    def clicked(self):
+    def clicked_st(self):
         cond = self.butt_start.isChecked()
         if not (cond):
             self.butt_start.setText("Start")
@@ -373,8 +377,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """-----------------------connect ---------------------"""
     def connect(self):
         self.port_name = self.prefWin.p_port_name
-        cond = self.butt_conn.isChecked()
-        if cond:
+        if self.con_enable:
             try:
                 """ ----- pripojeni serioveho portu ----------"""
                 self.s = serial.Serial(self.port_name, baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
@@ -387,17 +390,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.lab_stat.setText(str(self.s.name))
                 self.lab_stat.setStyleSheet('color: green')
                 self.statusBar().showMessage(stat_con, 2000)
+                self.con_enable = False
             except:
                 self.statusBar().showMessage("Unable to connect", 2000)
-                self.butt_conn.setChecked(False)
                 string = "Unable to connect to: " + self.port_name
                 self.lab_stat.setText(string)
                 self.lab_stat.setStyleSheet('color: orange')
         else:
             self.s.close()
             self.statusBar().showMessage("Disconnected", 3000)
+            self.con_enable = True
             self.butt_start.setEnabled(False)
             self.butt_conn.setText("Connect")
+            self.butt_start.setText("Start")
+            self.draw_enable = 0
+            self.statusBar().showMessage("Stopped", 2000)
 
     def prefClick(self):
         self.window.show()
