@@ -28,14 +28,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("PSD - test")
 
         """ --------------------- PROMENNE ------------------------"""
-        self.s_time = 100  #perioda vzorkovani
+        self.s_time = 33  #perioda vzorkovani
         self.port_name = 'COM5'
         self.disp_set = 'rel' # / 'abs'
         self.d_len = 100
         self.tab_len = 30
         self.val_343 = 1
         self.draw_enable = 0
+        self.in_mode = 'AC'
         self.con_enable = True
+        self.carry_f = 100000
+        self.distance = 0
 
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
@@ -87,7 +90,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.Y_label_2.setFont(font_lab)
 
         self.X_label = QtWidgets.QLabel(self.centralwidget)
-        self.X_label.setGeometry(255, 418, 90, 20)
+        self.X_label.setGeometry(255, 418, 100, 20)
         self.X_label.setText("coord. X [-]")
         self.X_label.setFont(font_lab)
 
@@ -150,7 +153,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """ ----------------------------preferences window---------------------------"""
         self.window = QtWidgets.QMainWindow()
         self.prefWin = Preferences_win()
-        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name)
+        self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name,self.in_mode)
 
         self.window_txt = QtWidgets.QMainWindow()
         self.txtWin = Txt_win()
@@ -158,7 +161,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         """tlacitko STart/STOP --------- tlacitko CONNECT """
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
-        self.butt_start.setGeometry(QtCore.QRect(585, 410, 93, 28))
+        self.butt_start.setGeometry(QtCore.QRect(575, 410, 93, 28))
         self.butt_start.setCheckable(True)
         self.butt_start.setChecked(False)  #pocatecni stav STOP => setChecked(False)
         self.butt_start.setEnabled(False)
@@ -167,13 +170,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.butt_start.setText("Start")
 
         self.butt_conn = QtWidgets.QPushButton(self.centralwidget)
-        self.butt_conn.setGeometry(QtCore.QRect(685, 410, 93, 28))
+        self.butt_conn.setGeometry(QtCore.QRect(675, 410, 93, 28))
         self.butt_conn.setEnabled(True)
         self.butt_conn.setCheckable(True)
         self.butt_conn.setChecked(False)
         self.butt_conn.setText("Connect")
         self.butt_conn.clicked.connect(self.connect)
-
+        """  Tlacitko Clear"""
+        self.butt_clear = QtWidgets.QPushButton(self.centralwidget)
+        self.butt_clear.setGeometry(QtCore.QRect(775, 410, 93, 28))
+        self.butt_clear.setText("Clear")
+        self.butt_clear.clicked.connect(self.clear)
         """ --------- connection labels ----------"""
         font_con = QtGui.QFont()
         font_con.setPointSize(9)
@@ -232,7 +239,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     """-----------------------------------FUNKCE/METODY TRID GUI ----------------------------------------------------"""
     def Time_update(self):
-
+        self.mode_check()
         """labely grafů"""
         if self.draw_enable == 1:
             self.quad.update_figure()
@@ -320,15 +327,55 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.timer.setInterval(self.s_time)
 
+    def mode_check(self):
+        """ Zmena checkboxu"""
+        if self.in_mode != self.prefWin.p_in_mode:
+            if self.prefWin.p_in_mode == 'AC':
+                mystr = ("AC " + str(self.prefWin.p_carry_f))
+                b = bytes(mystr, 'ascii')
+                print(mystr)
+                self.s.reset_input_buffer()
+                self.s.reset_output_buffer()
+                self.s.write(b)
+            else:
+                self.s.reset_input_buffer()
+                self.s.reset_output_buffer()
+                self.s.write(b"DC 0")
+                print('DC')
+            self.in_mode = self.prefWin.p_in_mode
+
+        """ Zmena frekvence - SET"""
+        if self.carry_f != self.prefWin.p_carry_f:
+            mystr = ("AC " + str(self.prefWin.p_carry_f))
+            b = bytes(mystr, 'ascii')
+            print(mystr)
+            self.s.reset_input_buffer()
+            self.s.reset_output_buffer()
+            self.s.write(b)
+            self.carry_f = self.prefWin.p_carry_f
+
+        """ Zmena distance - SET"""
+        if self.distance != self.prefWin.p_distance:
+            mystr = ("DS " + str(self.prefWin.p_distance))
+            b = bytes(mystr, 'ascii')
+            print(mystr)
+            self.s.reset_input_buffer()
+            self.s.reset_output_buffer()
+            self.s.write(b)
+            self.distance = self.prefWin.p_distance
+
+
+
     def read_data(self):        # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni Serioveho portu
         try:
             data = (self.s.readline())  # cteni z portu
+            self.s.reset_input_buffer()  # vycisteni kvuli odezve - COvid nelze otestovat
             data_str = data.decode("utf-8")
             data_list = data_str.rsplit(" ")
             sum_data = float(data_list[0])
             x_data = float(data_list[1])
             y_data = float(data_list[2])
-            print(sum_data, x_data, y_data)  # vypis do konzole debugging
+            #print(sum_data, x_data, y_data)  # vypis do konzole debugging
 
             if sum_data == 0:  #ochrana deleni nulou
                 x_div = 0
@@ -380,7 +427,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if self.con_enable:
             try:
                 """ ----- pripojeni serioveho portu ----------"""
-                self.s = serial.Serial(self.port_name, baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
+                #self.s = serial.Serial(self.port_name, baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
+                self.s = serial.Serial(self.port_name, baudrate=115200, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
                 print(self.s.name)
                 self.timer.start(self.s_time)
                 stat_con = "Connected to: " + self.s.name
@@ -405,6 +453,19 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.butt_start.setText("Start")
             self.draw_enable = 0
             self.statusBar().showMessage("Stopped", 2000)
+
+    def clear(self):
+        self.quad.x_old = np.zeros(self.tab_len)  # Nulovani garfu a tabulky
+        self.quad.y_old = np.zeros(self.tab_len)
+        self.x_time.x_y_old = np.zeros(self.d_len)
+        self.y_time.x_y_old = np.zeros(self.d_len)
+        self.quad.X_data = 0
+        self.quad.Y_data = 0
+        self.quad.update_figure()
+        self.x_time.update_figure_two()
+        self.y_time.update_figure_two()
+        self.s.reset_input_buffer()
+        self.s.reset_output_buffer()
 
     def prefClick(self):
         self.window.show()
@@ -432,9 +493,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def about(self):
         QtWidgets.QMessageBox.about(self, "About",
                                     """
-    This is testing version of PSD, this version expect data in this order: SUM, X, Y.
+    This is testing version of PSD software, this version expect data in this order: SUM, X, Y.
     
-    The PSD application is part of the Diploma thesis."""
+    The PSD application is part of the Diploma thesis.
+    
+    AC/DC mode - AC mode works with correlation of input signal and internally generated signal inside ARM
+                    - this mode is better for signals with high noise
+               - DC mode works with RMS of input signal
+                    - this mode works better with signals with low noise"""
                                     )
 
 
