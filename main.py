@@ -35,6 +35,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tab_len = 30
         self.val_343 = 1
         self.draw_enable = 0
+        self.spot_rad = 1
         self.in_mode = 'AC'
         self.con_enable = True
         self.carry_f = 100000
@@ -270,12 +271,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.x_time.x_y_old = np.zeros(self.d_len)      #Reset Time - pri zmene
             self.y_time.x_y_old = np.zeros(self.d_len)
-
+        """zmena portu"""
         if self.port_name != self.prefWin.p_port_name:
             self.s.close()
             self.connect()
         self.port_name = self.prefWin.p_port_name
+        """zmena spotu"""
+        if self.spot_rad != self.prefWin.p_spot_rad:
+            self.spot_rad = self.prefWin.p_spot_rad
+            self.quad.spot_rad = self.prefWin.p_spot_rad
 
+        """ Zmena Disp set - ABS/REL"""
         if self.disp_set != self.prefWin.p_disp_set:  # reaguje na zmenu
             if self.prefWin.p_disp_set == 'abs':
                 self.Y_label_2.setText("[mm]")
@@ -283,12 +289,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.Y_label_time.setText("coord. Y [mm]")
                 self.X_label_time.setText("coord. X [mm]")
                 self.val_343 = 3.43
+                self.quad.spot_rad = self.spot_rad
+                self.quad.p_lim = 1.3 * self.val_343
             else:
                 self.Y_label_2.setText("[-]")
                 self.X_label.setText("coord. X [-]")
                 self.Y_label_time.setText("coord. Y [-]")
                 self.X_label_time.setText("coord. X [-]")
                 self.val_343 = 1
+                self.quad.spot_rad = self.spot_rad/3.43
+                self.quad.p_lim = 1.3 * self.val_343
 
             self.quad.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
             self.quad.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
@@ -302,12 +312,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.x_time.x_y_old = np.zeros(self.d_len)
             self.y_time.x_y_old = np.zeros(self.d_len)
 
-        self.disp_set = self.prefWin.p_disp_set  # --- bastaveni disp - abs/rel
+        self.disp_set = self.prefWin.p_disp_set  # --- ulozeni param do MAIn - abs/rel
         self.quad.disp_set_plt = self.prefWin.p_disp_set
         self.x_time.disp_set_plt = self.prefWin.p_disp_set
         self.y_time.disp_set_plt = self.prefWin.p_disp_set
-        """Zmena labelu - rel/abs"""
-
 
         """nutna podmika pro prekopani tabulky"""
         if self.tab_len != self.prefWin.p_tab_len:   # tab_len stara hosnota/ p_tab_len nova hodnota

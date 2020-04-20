@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import *
 class Preferences_win(object):
     def setupUi(self, OtherWindow, tab_len,  d_len, s_time, disp_set, port_name, in_mode):
         OtherWindow.setObjectName("OtherWindow")
-        OtherWindow.setGeometry(1300, 400, 450, 250)
+        OtherWindow.setGeometry(1300, 300, 450, 270)
         OtherWindow.setWindowTitle("Preferences")
         """ PROMENNE"""
+        self.val_343 = 3.43  # mm
         """ Limits """
         self.max_tab_len = 5000  # delka tabulky
         self.min_tab_len = 1
@@ -18,6 +19,7 @@ class Preferences_win(object):
         self.max_freq = 120000  # AC frekvence
         self.min_freq = 1500
         self.max_dis = 5000
+        self.max_spot = self.val_343
         """ Actual values"""
         self.p_d_len = d_len
         self.p_s_time = s_time
@@ -27,7 +29,8 @@ class Preferences_win(object):
         self.p_in_mode = in_mode
         self.p_carry_f = 100000
         self.p_phase = 0
-        self.p_distance = 0;
+        self.p_distance = 0
+        self.p_spot_rad = 1
 
 
 
@@ -129,10 +132,10 @@ class Preferences_win(object):
         coor_mode = [coor_disp[0], coor_disp[1] + 24]
         self.label_mode = QtWidgets.QLabel(self.centralwidget)
         self.label_mode.setGeometry(QtCore.QRect(coor_mode[0], coor_mode[1], 200, 20))
-        self.label_mode.setText("Mode: AC")
+        self.label_mode.setText("Mode: Correlation")
 
         self.mode_box = QCheckBox(self.centralwidget)
-        self.mode_box.setText("AC/DC")
+        self.mode_box.setText("Correlation / RMS")
         self.mode_box.setChecked(False)
         self.mode_box.setGeometry(QtCore.QRect(coor_mode[0] + 110, coor_mode[1], 200, 20))
         self.mode_box.toggled.connect(self.set_mode)
@@ -172,7 +175,25 @@ class Preferences_win(object):
         self.label_val_dis.setGeometry(QtCore.QRect(309, coor_dis[1], 100, 20))
         self.label_val_dis.setText(str(self.p_distance) + " m")
 
-        """---------others -----------------------"""
+        """--------------Spot radius (width) set ------------------"""
+        coor_spot = [coor_dis[0], coor_dis[1] + 24]
+        self.label_spot = QtWidgets.QLabel(self.centralwidget)
+        self.label_spot.setGeometry(QtCore.QRect(coor_spot[0], coor_spot[1], 110, 20))
+        self.label_spot.setText("Spot radius (mm):")
+
+        self.text_spot = QLineEdit(self.centralwidget)
+        self.text_spot.setPlaceholderText("Max:" + str(self.max_spot) + " mm")
+        self.text_spot.setGeometry(QtCore.QRect(coor_spot[0] + 110, coor_spot[1], 130, 20))
+
+        self.butt_spot = QtWidgets.QPushButton("Set", self.centralwidget)
+        self.butt_spot.setGeometry(QtCore.QRect(265, coor_spot[1], 40, 20))
+        self.butt_spot.clicked.connect(self.Set_spot)
+
+        self.label_val_spot = QtWidgets.QLabel(self.centralwidget)
+        self.label_val_spot.setGeometry(QtCore.QRect(309, coor_spot[1], 100, 20))
+        self.label_val_spot.setText(str(self.p_spot_rad) + " mm")
+
+        """-----------others -----------------------"""
         self.statusbar = QtWidgets.QStatusBar(OtherWindow)
         self.statusbar.setObjectName("statusbar")
         OtherWindow.setStatusBar(self.statusbar)
@@ -182,7 +203,7 @@ class Preferences_win(object):
         name = self.text_len.text()
         self.text_len.clear()
         if name == "":
-            self.label_val_d_len.setText(str(self.p_d_len))
+            self.label_val_d_len.setText(str(self.p_d_len)+ " samples")
             self.label_val_d_len.setStyleSheet('color: black')
         else:
             try:
@@ -204,7 +225,7 @@ class Preferences_win(object):
         name = self.text_tab_len.text()
         self.text_tab_len.clear()
         if name == "":
-            self.label_val_tab_len.setText(str(self.p_tab_len))
+            self.label_val_tab_len.setText(str(self.p_tab_len)+ " samples")
             self.label_val_tab_len.setStyleSheet('color: black')
         else:
             try:
@@ -226,7 +247,7 @@ class Preferences_win(object):
         name = self.text_time.text()
         self.text_time.clear()
         if name == "":
-            self.label_val_time.setText(str(self.p_s_time))
+            self.label_val_time.setText(str(self.p_s_time)+ " ms")
             self.label_val_time.setStyleSheet('color: black')
         else:
             try:
@@ -268,7 +289,7 @@ class Preferences_win(object):
 
     def set_mode(self):
         if self.mode_box.checkState():
-            self.label_mode.setText('Mode: DC')
+            self.label_mode.setText('Mode: RMS')
             """grayout freq"""
             self.butt_ac.setEnabled(False)
             self.label_val_ac.setStyleSheet('color: grey')
@@ -279,7 +300,7 @@ class Preferences_win(object):
             self.label_val_dis.setStyleSheet('color: grey')
             self.label_dis.setStyleSheet('color: grey')
         else:
-            self.label_mode.setText('Mode: AC')
+            self.label_mode.setText('Mode: Correlation')
             """enable freq set"""
             self.butt_ac.setEnabled(True)
             self.label_val_ac.setStyleSheet('color: black')
@@ -295,7 +316,7 @@ class Preferences_win(object):
         name = self.text_ac.text()
         self.text_ac.clear()
         if name == "":
-            self.label_val_ac.setText(str(self.p_carry_f))
+            self.label_val_ac.setText(str(self.p_carry_f)+ " Hz")
             self.label_val_ac.setStyleSheet('color: black')
         else:
             try:
@@ -317,13 +338,13 @@ class Preferences_win(object):
         name = self.text_dis.text()
         self.text_dis.clear()
         if name == "":
-            self.label_val_dis.setText(str(self.p_distance))
+            self.label_val_dis.setText(str(self.p_distance)+ " m")
             self.label_val_dis.setStyleSheet('color: black')
         else:
             try:
-                if int(name) > self.max_dis:
-                    self.p_distance = self.max_freq
-                elif int(name) < 0:
+                if float(name) > self.max_dis:
+                    self.p_distance = self.max_dis
+                elif float(name) < 0:
                     self.p_distance = 0
                 else:
                     self.p_distance = float(name)
@@ -334,6 +355,30 @@ class Preferences_win(object):
             except:
                 self.label_val_dis.setStyleSheet('color: red')
                 self.label_val_dis.setText("NaN")
+
+    def Set_spot(self):
+        name = self.text_spot.text()
+        self.text_spot.clear()
+        if name == "":
+            self.label_val_spot.setText(str(self.p_spot_rad) + " mm")
+            self.label_val_spot.setStyleSheet('color: black')
+        else:
+            try:
+                if float(name) > self.max_spot:
+                    self.p_spot_rad = self.max_spot
+
+                elif float(name) < 0:
+                    self.p_spot_rad = 0
+
+                else:
+                    self.p_spot_rad = float(name)
+
+                self.label_val_dis.setText(str(self.p_spot_rad) + " m")
+                self.label_val_spot.setStyleSheet('color: black')
+                print(self.p_spot_rad)
+            except:
+                self.label_val_spot.setStyleSheet('color: red')
+                self.label_val_spot.setText("NaN")
 
 
 

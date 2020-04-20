@@ -25,7 +25,9 @@ class MyMplCanvas(FigureCanvas):
         self.s_time_mpl = 100  #inicializace
         self.s_time_mpl_old = 100
         self.disp_set_plt = 'rel'
-        self.val_343 = 3.43
+        self.val_343 = 1
+        self.p_lim = 1.3
+
 
     def compute_initial_figure(self):
         pass
@@ -42,7 +44,7 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.tab_len = 30
         self.x_old = np.zeros(self.tab_len)
         self.y_old = np.zeros(self.tab_len)
-        self.val_343 = 1
+        self.spot_rad = 1/3.43
         self.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
         self.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
         self.frame_x1 = [0, 0]
@@ -72,7 +74,15 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
 
         self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle = ':', label='stare pozice', markersize=2)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
+        theta = np.linspace(0, 2 * np.pi, 100)
 
+        #r = np.sqrt(self.spot_width)
+        r = self.spot_rad
+        x1 = r * np.cos(theta) + self.X_data
+        x2 = r * np.sin(theta) + self.Y_data
+        self.axes.plot(x1, x2, linestyle=':', color='r', markersize=0.6)
+        self.axes.set_xlim(-self.p_lim, self.p_lim)
+        self.axes.set_ylim(-self.p_lim, self.p_lim)
         self.draw()
 
 
@@ -94,6 +104,7 @@ class MplTwo(MyMplCanvas):   # ----------------------- DOLNI GRAFY -------------
         self.axes.plot(x1, self.x_y_old, 'r')
 
         self.draw()
-
-        self.x_y_old = np.append(self.x_y_old, self.x_y_new) # pripoji nakonec
-        self.x_y_old = np.delete(self.x_y_old,0)
+        self.x_y_old = np.append(self.x_y_new, self.x_y_old )  # pripoji nakonec
+        self.x_y_old = np.delete(self.x_y_old, self.d_len)
+        # self.x_y_old = np.append(self.x_y_old, self.x_y_new) # pripoji nakonec
+        # self.x_y_old = np.delete(self.x_y_old,0)
