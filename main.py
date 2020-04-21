@@ -27,6 +27,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("PSD - test")
 
+        scriptDir = os.path.dirname(os.path.realpath(__file__))
+        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'logo_2.ico'))
+
         """ --------------------- PROMENNE ------------------------"""
         self.s_time = 33  #perioda vzorkovani
         self.port_name = 'COM5'
@@ -155,14 +158,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.time_label_Y.setText("Time [ms]")
         self.time_label_Y.setFont(font_lab)
 
-        """ ----------------------------preferences window---------------------------"""
+        """ ----------------------------OSTATNI OKNA------------------------------"""
         self.window = QtWidgets.QMainWindow()
         self.prefWin = Preferences_win()
         self.prefWin.setupUi(self.window, self.tab_len, self.d_len, self.s_time, self.disp_set, self.port_name,self.in_mode)
+        self.window.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'logo_3.jpg'))
 
         self.window_txt = QtWidgets.QMainWindow()
         self.txtWin = Txt_win()
         self.txtWin.setupUi(self.window_txt, self.quad.x_old, self.quad.y_old)
+        self.window_txt.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'logo_printer.jpg'))
 
         """tlacitko STart/STOP --------- tlacitko CONNECT """
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
@@ -485,6 +490,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.lab_stat.setStyleSheet('color: green')
                 self.statusBar().showMessage(stat_con, 2000)
                 self.con_enable = False
+                if self.in_mode == "AC":
+                    mystr = ("AC " + str(self.prefWin.p_carry_f))
+                    b = bytes(mystr, 'ascii')
+                    print(mystr)
+                    self.s.reset_input_buffer()
+                    self.s.reset_output_buffer()
+                    self.s.write(b)
+                else:
+                    self.s.reset_input_buffer()
+                    self.s.reset_output_buffer()
+                    self.s.write(b"DC 0")
+                    print('DC 0')
             except:
                 self.statusBar().showMessage("Unable to connect", 2000)
                 string = "Unable to connect to: " + self.port_name

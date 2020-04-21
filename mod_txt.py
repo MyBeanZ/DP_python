@@ -9,6 +9,7 @@ class Txt_win(object):
         OtherWindow.setObjectName("OtherWindow")
         OtherWindow.setGeometry(x_y_coor[0], x_y_coor[1], x_y_geo[0], x_y_geo[1])
         OtherWindow.setWindowTitle("Create txt file")
+
         """ PROMENNE"""
         self.data_test_x = data_x
         self.data_test_y = data_y

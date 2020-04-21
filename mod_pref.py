@@ -7,6 +7,7 @@ class Preferences_win(object):
         OtherWindow.setObjectName("OtherWindow")
         OtherWindow.setGeometry(1300, 100, 435, 570)
         OtherWindow.setWindowTitle("Preferences")
+
         """ PROMENNE"""
         self.val_343 = 3.43  # mm
         """ Limits """
