@@ -35,7 +35,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.tab_len = 30
         self.val_343 = 1
         self.draw_enable = 0
-        self.spot_rad = 1
+        self.spot_rad_x = 1
+        self.spot_rad_y = 1
+        self.cal_factor_x = 1
+        self.cal_factor_y = 1
+        self.circ_elips = "circ"
         self.in_mode = 'AC'
         self.con_enable = True
         self.carry_f = 100000
@@ -106,7 +110,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         font_time = QtGui.QFont()
         font_time.setPointSize(9)
         self.label_X = QtWidgets.QLabel(self.verticalLayoutWidget_2)  # self pred label kvuli pristupu z cele tridy
-        self.label_X.setText("X samples in time")
+        self.label_X.setText("X coord. in time")
         self.label_X.setFont(font_time)
         self.label_X.setGeometry(0, 15, 130, 18)
 
@@ -132,7 +136,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.y_time = MplTwo(self.verticalLayoutWidget_3, width=6, height=2, dpi=90)  # dc - graf XY
 
         self.label_Y = QtWidgets.QLabel(self.verticalLayoutWidget_3)  # self pred label kvuli pristupu z cele tridy
-        self.label_Y.setText("Y samples in time")
+        self.label_Y.setText("Y coord. in time")
         self.label_Y.setFont(font_time)
         self.label_Y.setGeometry(0, 15, 130, 20)
 
@@ -239,8 +243,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.Time_update)
 
     """-----------------------------------FUNKCE/METODY TRID GUI ----------------------------------------------------"""
+    """ FCE - periodicky volana s casovacem"""
     def Time_update(self):
-        self.mode_check()
+        self.abs_check()   #abs/rel
+        self.mode_check()  #correlation/RMS
+        self.spot_check()   #radius
+        self.factor_check()
         """labely grafů"""
         if self.draw_enable == 1:
             self.quad.update_figure()
@@ -271,51 +279,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.x_time.x_y_old = np.zeros(self.d_len)      #Reset Time - pri zmene
             self.y_time.x_y_old = np.zeros(self.d_len)
+
         """zmena portu"""
         if self.port_name != self.prefWin.p_port_name:
             self.s.close()
             self.connect()
         self.port_name = self.prefWin.p_port_name
-        """zmena spotu"""
-        if self.spot_rad != self.prefWin.p_spot_rad:
-            self.spot_rad = self.prefWin.p_spot_rad
-            self.quad.spot_rad = self.prefWin.p_spot_rad
-
-        """ Zmena Disp set - ABS/REL"""
-        if self.disp_set != self.prefWin.p_disp_set:  # reaguje na zmenu
-            if self.prefWin.p_disp_set == 'abs':
-                self.Y_label_2.setText("[mm]")
-                self.X_label.setText("coord. X [mm]")
-                self.Y_label_time.setText("coord. Y [mm]")
-                self.X_label_time.setText("coord. X [mm]")
-                self.val_343 = 3.43
-                self.quad.spot_rad = self.spot_rad
-                self.quad.p_lim = 1.3 * self.val_343
-            else:
-                self.Y_label_2.setText("[-]")
-                self.X_label.setText("coord. X [-]")
-                self.Y_label_time.setText("coord. Y [-]")
-                self.X_label_time.setText("coord. X [-]")
-                self.val_343 = 1
-                self.quad.spot_rad = self.spot_rad/3.43
-                self.quad.p_lim = 1.3 * self.val_343
-
-            self.quad.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
-            self.quad.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
-            self.quad.frame_x1 = [0, 0]
-            self.quad.frame_y1 = [self.val_343, -self.val_343]
-            self.quad.frame_y2 = [0, 0]
-            self.quad.frame_x2 = [self.val_343, -self.val_343]
-
-            self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
-            self.quad.y_old = np.zeros(self.tab_len)
-            self.x_time.x_y_old = np.zeros(self.d_len)
-            self.y_time.x_y_old = np.zeros(self.d_len)
-
-        self.disp_set = self.prefWin.p_disp_set  # --- ulozeni param do MAIn - abs/rel
-        self.quad.disp_set_plt = self.prefWin.p_disp_set
-        self.x_time.disp_set_plt = self.prefWin.p_disp_set
-        self.y_time.disp_set_plt = self.prefWin.p_disp_set
 
         """nutna podmika pro prekopani tabulky"""
         if self.tab_len != self.prefWin.p_tab_len:   # tab_len stara hosnota/ p_tab_len nova hodnota
@@ -334,6 +303,64 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.txtWin.data_test_y = self.y_time.x_y_old
 
         self.timer.setInterval(self.s_time)
+    """v main tride resim ciste zmenu rozmeru x a y - kalibrace v preferences"""
+
+    def abs_check(self):
+        """ Zmena Disp set - ABS/REL"""
+        if self.disp_set != self.prefWin.p_disp_set:  # reaguje na zmenu
+            if self.prefWin.p_disp_set == 'abs':
+                self.Y_label_2.setText("[mm]")
+                self.X_label.setText("coord. X [mm]")
+                self.Y_label_time.setText("coord. Y [mm]")
+                self.X_label_time.setText("coord. X [mm]")
+                self.val_343 = 3.43
+                self.quad.spot_rad_x = self.spot_rad_x
+                self.quad.spot_rad_y = self.spot_rad_y
+                self.quad.p_lim = 1.3 * self.val_343
+            else:
+                self.Y_label_2.setText("[-]")
+                self.X_label.setText("coord. X [-]")
+                self.Y_label_time.setText("coord. Y [-]")
+                self.X_label_time.setText("coord. X [-]")
+                self.val_343 = 1
+                self.quad.spot_rad_x = self.spot_rad_x /3.43  # musim delit jelikoz spot_rad_y v absolutnich hodnotach
+                self.quad.spot_rad_y = self.spot_rad_y /3.43  # musim delit jelikoz spot_rad_y v absolutnich hodnotach
+                self.quad.p_lim = 1.3 * self.val_343
+
+            self.quad.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
+            self.quad.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
+            self.quad.frame_x1 = [0, 0]
+            self.quad.frame_y1 = [self.val_343, -self.val_343]
+            self.quad.frame_y2 = [0, 0]
+            self.quad.frame_x2 = [self.val_343, -self.val_343]
+
+            self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
+            self.quad.y_old = np.zeros(self.tab_len)
+            self.x_time.x_y_old = np.zeros(self.d_len)
+            self.y_time.x_y_old = np.zeros(self.d_len)
+            self.quad.X_data = 0
+            self.quad.Y_data = 0
+            self.x_time.x_y_new = 0
+            self.y_time.x_y_new = 0
+
+            self.disp_set = self.prefWin.p_disp_set  # --- ulozeni param do MAIn - abs/rel
+            self.quad.disp_set_plt = self.prefWin.p_disp_set
+            self.x_time.disp_set_plt = self.prefWin.p_disp_set
+            self.y_time.disp_set_plt = self.prefWin.p_disp_set
+
+    def spot_check(self):
+        if self.val_343 == 1:  # pokud rovno jedné potom se jedna o relativni mod nutno podelit 3.43
+            abs_or_rel = 3.43
+        else:
+            abs_or_rel = 1
+
+        if (self.spot_rad_x != self.prefWin.p_spot_rad_x) :
+            self.spot_rad_x = self.prefWin.p_spot_rad_x/abs_or_rel
+            self.quad.spot_rad_x = self.prefWin.p_spot_rad_x / abs_or_rel
+
+        if (self.spot_rad_y != self.prefWin.p_spot_rad_y):
+            self.spot_rad_y = self.prefWin.p_spot_rad_y/abs_or_rel
+            self.quad.spot_rad_y = self.prefWin.p_spot_rad_y / abs_or_rel
 
     def mode_check(self):
         """ Zmena checkboxu"""
@@ -349,7 +376,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.s.reset_input_buffer()
                 self.s.reset_output_buffer()
                 self.s.write(b"DC 0")
-                print('DC')
+                print('DC 0')
             self.in_mode = self.prefWin.p_in_mode
 
         """ Zmena frekvence - SET"""
@@ -372,9 +399,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.s.write(b)
             self.distance = self.prefWin.p_distance
 
+    def factor_check(self):
+        if self.cal_factor_x != self.prefWin.p_cal_factor_x:
+            self.clear()
+            self.cal_factor_x = self.prefWin.p_cal_factor_x
+
+        if self.cal_factor_y != self.prefWin.p_cal_factor_y:
+            self.clear()
+            self.cal_factor_y = self.prefWin.p_cal_factor_y
 
 
-    def read_data(self):        # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni Serioveho portu
+
+    def read_data(self):      # Tato fce bezi NEPRETRZITE - z duvodu kontroli pripojeni Serioveho portu
         try:
             data = (self.s.readline())  # cteni z portu
             self.s.reset_input_buffer()  # vycisteni kvuli odezve - COvid nelze otestovat
@@ -384,6 +420,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             x_data = float(data_list[1])
             y_data = float(data_list[2])
             #print(sum_data, x_data, y_data)  # vypis do konzole debugging
+            if 0.9*sum_data>(x_data + y_data):
+                self.statusBar().showMessage("Out of range !!!", 3000)  #laser mimo sensor
 
             if sum_data == 0:  #ochrana deleni nulou
                 x_div = 0
@@ -397,10 +435,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             else:
                 val_343 = 1
 
-            self.x_time.x_y_new = x_div * val_343
-            self.y_time.x_y_new = y_div * val_343
-            self.quad.X_data = x_div* val_343
-            self.quad.Y_data = y_div* val_343
+            self.x_time.x_y_new = x_div * val_343 * self.cal_factor_x
+            self.y_time.x_y_new = y_div * val_343 * self.cal_factor_y
+            self.quad.X_data = x_div* val_343 * self.cal_factor_x
+            self.quad.Y_data = y_div* val_343 * self.cal_factor_y
         except:
             self.statusBar().showMessage("Unable to read - Disconnected", 3000)
             self.lab_stat.setText("Disconnected")

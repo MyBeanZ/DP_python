@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 
 class Txt_win(object):
     def setupUi(self, OtherWindow, data_x, data_y):
-        x_y_coor = [1300, 670]
+        x_y_coor = [1300, 720]
         x_y_geo = [320, 150]
         OtherWindow.setObjectName("OtherWindow")
         OtherWindow.setGeometry(x_y_coor[0], x_y_coor[1], x_y_geo[0], x_y_geo[1])

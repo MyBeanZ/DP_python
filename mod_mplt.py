@@ -44,7 +44,8 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.tab_len = 30
         self.x_old = np.zeros(self.tab_len)
         self.y_old = np.zeros(self.tab_len)
-        self.spot_rad = 1/3.43
+        self.spot_rad_x = 1/3.43
+        self.spot_rad_y = 1 / 3.43
         self.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
         self.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
         self.frame_x1 = [0, 0]
@@ -77,8 +78,9 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         theta = np.linspace(0, 2 * np.pi, 100)
 
         #r = np.sqrt(self.spot_width)
-        r = self.spot_rad
+        r = self.spot_rad_x
         x1 = r * np.cos(theta) + self.X_data
+        r = self.spot_rad_y
         x2 = r * np.sin(theta) + self.Y_data
         self.axes.plot(x1, x2, linestyle=':', color='r', markersize=0.6)
         self.axes.set_xlim(-self.p_lim, self.p_lim)
