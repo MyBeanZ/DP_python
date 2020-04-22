@@ -501,7 +501,7 @@ class Preferences_win(object):
 
     def set_rad_x(self):
         val = self.p_spot_rad_x
-        self.p_spot_rad_y = self.set_val_gen(self.text_spot_x, self.label_val_spot_x, val, self.max_spot_x, 0, "mm", 'f')
+        self.p_spot_rad_x = self.set_val_gen(self.text_spot_x, self.label_val_spot_x, val, self.max_spot_x, 0, "mm", 'f')
 
     def set_rad_y(self):
         val = self.p_spot_rad_y
