@@ -561,6 +561,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.about(self, "About",
                                     """
     This software is a part of Diploma thesis of University of Brno ( Faculty of Electrical Engineering and Communication ).\r
+    More info on - https://github.com/MyBeanZ/DP_python and https://github.com/MyBeanZ/DP_firmware
     
      """
                                     )
