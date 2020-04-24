@@ -15,7 +15,7 @@ class Preferences_win(object):
         self.min_tab_len = 1
         self.max_time = 10000    #update delay
         self.min_time = 1
-        self.max_d_len = 10000   #casova osa
+        self.max_d_len = 500000   #casova osa
         self.min_d_len = 5
         self.max_freq = 120000  # AC frekvence
         self.min_freq = 1500
@@ -373,7 +373,7 @@ class Preferences_win(object):
         self.label_y_res.setText("Y max-min (mm):")
 
         self.label_y_res_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_y_res_2.setGeometry(QtCore.QRect(coor_y_result[0] + 110, coor_y_result[1], 110, 20))
+        self.label_y_res_2.setGeometry(QtCore.QRect(coor_y_result[0] + 110, coor_y_result[1], 170, 20))
         self.label_y_res_2.setText(" ")
 
 
@@ -385,7 +385,7 @@ class Preferences_win(object):
         self.label_factor.setText("Factor:")
 
         self.label_factor_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_factor_2.setGeometry(QtCore.QRect(coor_factor[0] + 50, coor_factor[1], 200, 20))
+        self.label_factor_2.setGeometry(QtCore.QRect(coor_factor[0] + 50, coor_factor[1], 250, 20))
         self.label_factor_2.setText(" ")
 
 
@@ -663,24 +663,19 @@ class Preferences_win(object):
         if self.x_res > self.y_res:
             self.p_cal_factor_x = self.y_res/self.x_res
             self.p_cal_factor_y = 1
-            self.label_factor_2.setText("X scaled down with factor: " + str(self.p_cal_factor_x))
+            #self.label_factor_2.setText("X scaled down with factor: " + str(self.p_cal_factor_x))
+            self.label_factor_2.setText("X scaled down with factor: " + "{:6.4f}".format(self.p_cal_factor_x))
             self.label_factor_2.setStyleSheet('color: #990000')
         elif self.x_res < self.y_res:
             self.p_cal_factor_x = 1
             self.p_cal_factor_y = self.x_res/self.y_res
-            self.label_factor_2.setText("Y scaled down with factor: " + str(self.p_cal_factor_y))
+            self.label_factor_2.setText("Y scaled down with factor: " +"{:6.4f}".format(self.p_cal_factor_y))
             self.label_factor_2.setStyleSheet('color: #990000')
         else:
             self.p_cal_factor_x = 1
             self.p_cal_factor_y = 1
             self.label_factor_2.setText("1")
             self.label_factor_2.setStyleSheet('color: black')
-
-
-
-
-
-
 
 
 if __name__ == "__main__":  # pro testovani

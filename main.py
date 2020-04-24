@@ -252,8 +252,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def Time_update(self):
         self.abs_check()   #abs/rel
         self.mode_check()  #correlation/RMS
-        self.spot_check()   #radius
         self.factor_check()
+        self.spot_check()   #radius
+
         """labely grafů"""
         if self.draw_enable == 1:
             self.quad.update_figure()
@@ -339,14 +340,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.quad.frame_y2 = [0, 0]
             self.quad.frame_x2 = [self.val_343, -self.val_343]
 
-            self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
-            self.quad.y_old = np.zeros(self.tab_len)
-            self.x_time.x_y_old = np.zeros(self.d_len)
-            self.y_time.x_y_old = np.zeros(self.d_len)
-            self.quad.X_data = 0
-            self.quad.Y_data = 0
-            self.x_time.x_y_new = 0
-            self.y_time.x_y_new = 0
+            self.clear()
+            # self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
+            # self.quad.y_old = np.zeros(self.tab_len)
+            # self.x_time.x_y_old = np.zeros(self.d_len)
+            # self.y_time.x_y_old = np.zeros(self.d_len)
+            # self.quad.X_data = 0
+            # self.quad.Y_data = 0
+            # self.x_time.x_y_new = 0
+            # self.y_time.x_y_new = 0
 
             self.disp_set = self.prefWin.p_disp_set  # --- ulozeni param do MAIn - abs/rel
             self.quad.disp_set_plt = self.prefWin.p_disp_set
@@ -363,9 +365,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.spot_rad_x = self.prefWin.p_spot_rad_x/abs_or_rel
             self.quad.spot_rad_x = self.prefWin.p_spot_rad_x / abs_or_rel
 
+
         if (self.spot_rad_y != self.prefWin.p_spot_rad_y):
             self.spot_rad_y = self.prefWin.p_spot_rad_y/abs_or_rel
             self.quad.spot_rad_y = self.prefWin.p_spot_rad_y / abs_or_rel
+
 
     def mode_check(self):
         """ Zmena checkboxu"""
@@ -406,11 +410,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def factor_check(self):
         if self.cal_factor_x != self.prefWin.p_cal_factor_x:
-            self.clear()
+            #self.clear()
             self.cal_factor_x = self.prefWin.p_cal_factor_x
 
         if self.cal_factor_y != self.prefWin.p_cal_factor_y:
-            self.clear()
+            #self.clear()
             self.cal_factor_y = self.prefWin.p_cal_factor_y
 
 
@@ -556,14 +560,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def about(self):
         QtWidgets.QMessageBox.about(self, "About",
                                     """
-    This is testing version of PSD software, this version expect data in this order: SUM, X, Y.
+    This software is a part of Diploma thesis of University of Brno ( Faculty of Electrical Engineering and Communication ).\r
     
-    The PSD application is part of the Diploma thesis.
-    
-    AC/DC mode - AC mode works with correlation of input signal and internally generated signal inside ARM
-                    - this mode is better for signals with high noise
-               - DC mode works with RMS of input signal
-                    - this mode works better with signals with low noise"""
+     """
                                     )
 
 
