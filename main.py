@@ -11,6 +11,7 @@ import serial
 from mod_mplt import MplQuad, MplTwo
 from mod_pref import Preferences_win
 from mod_txt import Txt_win
+from mod_com_data import Data_win
 import numpy as np
 
 progname = os.path.basename(sys.argv[0])
@@ -55,6 +56,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_R)
         self.file_menu.addAction('&Save data', self.prefTxt,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_T)
+        self.file_menu.addAction('&Display COM data', self.prefTxt,
+                                 QtCore.Qt.CTRL + QtCore.Qt.Key_D)
         self.file_menu.addAction('&Quit', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
 
