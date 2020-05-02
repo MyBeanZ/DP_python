@@ -43,7 +43,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.cal_factor_x = 1
         self.cal_factor_y = 1
         self.circ_elips = "circ"
-        self.in_mode = 'AC'
+        self.in_mode = 'DC'
         self.con_enable = True
         self.carry_f = 100000
         self.distance = 0
@@ -425,10 +425,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.s.reset_input_buffer()  # vycisteni kvuli odezve - COvid nelze otestovat
             data_str = data.decode("utf-8")
             data_list = data_str.rsplit(" ")
-            sum_data = float(data_list[0])
-            x_data = float(data_list[1])
-            y_data = float(data_list[2])
-            #print(sum_data, x_data, y_data)  # vypis do konzole debugging
+            if self.in_mode == 'DC':
+                scale_back = 100000
+            else:
+                scale_back = 1
+            sum_data = float(data_list[0])/scale_back
+            x_data = float(data_list[1])/scale_back
+            y_data = float(data_list[2])/scale_back
+            print(sum_data, x_data, y_data)  # vypis do konzole debugging
             if 0.9*sum_data>(x_data + y_data):
                 self.statusBar().showMessage("Out of range !!!", 3000)  #laser mimo sensor
 
@@ -522,17 +526,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.statusBar().showMessage("Stopped", 2000)
 
     def clear(self):
-        self.quad.x_old = np.zeros(self.tab_len)  # Nulovani garfu a tabulky
-        self.quad.y_old = np.zeros(self.tab_len)
-        self.x_time.x_y_old = np.zeros(self.d_len)
-        self.y_time.x_y_old = np.zeros(self.d_len)
-        self.quad.X_data = 0
-        self.quad.Y_data = 0
-        self.quad.update_figure()
-        self.x_time.update_figure_two()
-        self.y_time.update_figure_two()
-        self.s.reset_input_buffer()
-        self.s.reset_output_buffer()
+        try:
+            self.quad.x_old = np.zeros(self.tab_len)  # Nulovani garfu a tabulky
+            self.quad.y_old = np.zeros(self.tab_len)
+            self.x_time.x_y_old = np.zeros(self.d_len)
+            self.y_time.x_y_old = np.zeros(self.d_len)
+            self.quad.X_data = 0
+            self.quad.Y_data = 0
+            self.quad.update_figure()
+            self.x_time.update_figure_two()
+            self.y_time.update_figure_two()
+            self.s.reset_input_buffer()
+            self.s.reset_output_buffer()
+        except:
+            self.statusBar().showMessage("Nothing to clear", 2000)
 
     def prefClick(self):
         self.window.show()

@@ -171,14 +171,15 @@ class Preferences_win(object):
 
         self.label_mode_2 = QtWidgets.QLabel(self.centralwidget)
         self.label_mode_2.setGeometry(QtCore.QRect(coor_mode[0]+40, coor_mode[1], 100, 20))
-        self.label_mode_2.setText("Correlation:")
-        self.label_mode_2.setStyleSheet('color: blue')
+        self.label_mode_2.setText("RMS")
+        self.label_mode_2.setStyleSheet('color: red')
 
         self.mode_box = QCheckBox(self.centralwidget)
         self.mode_box.setText("Correlation / RMS")
         self.mode_box.setChecked(False)
         self.mode_box.setGeometry(QtCore.QRect(coor_mode[0] + 110, coor_mode[1], 200, 20))
         self.mode_box.toggled.connect(self.set_mode)
+
         """--------------freq set ------------------"""
         coor_ac = [coor_mode[0], coor_mode[1] + 24]
         self.label_ac = QtWidgets.QLabel(self.centralwidget)
@@ -394,7 +395,14 @@ class Preferences_win(object):
         self.butt_factor.clicked.connect(lambda: self.set_factor())
 
         self.set_cal_onof()
-
+        """grayout freq"""
+        self.butt_ac.setEnabled(False)
+        self.label_val_ac.setStyleSheet('color: grey')
+        self.label_ac.setStyleSheet('color: grey')
+        """grayout distance set"""
+        self.butt_dis.setEnabled(False)
+        self.label_val_dis.setStyleSheet('color: grey')
+        self.label_dis.setStyleSheet('color: grey')
         """-----------others -----------------------"""
         self.statusbar = QtWidgets.QStatusBar(OtherWindow)
         self.statusbar.setObjectName("statusbar")
@@ -423,7 +431,7 @@ class Preferences_win(object):
             self.label_disp.setText('Relative val.')
 
     def set_mode(self):
-        if self.mode_box.checkState():
+        if not (self.mode_box.checkState()):
             self.label_mode_2.setText(' RMS')
             self.label_mode_2.setStyleSheet('color: red')
             """grayout freq"""
