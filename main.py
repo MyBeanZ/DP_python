@@ -49,6 +49,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.carry_f = 100000
         self.distance = 0
 
+        self.com_sum_data = np.zeros(self.tab_len)
+        self.com_x_data = np.zeros(self.tab_len)
+        self.com_y_data = np.zeros(self.tab_len)
+
         """----lista menu ------"""
         self.file_menu = QtWidgets.QMenu('&File', self)
 
@@ -56,7 +60,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_R)
         self.file_menu.addAction('&Save data', self.prefTxt,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_T)
-        self.file_menu.addAction('&Display COM data', self.prefTxt,
+        self.file_menu.addAction('&Display COM data', self.prefData,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_D)
         self.file_menu.addAction('&Quit', self.fileQuit,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
@@ -171,6 +175,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.txtWin = Txt_win()
         self.txtWin.setupUi(self.window_txt, self.quad.x_old, self.quad.y_old)
         self.window_txt.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'logo_printer.jpg'))
+
+        self.window_data = QtWidgets.QMainWindow()
+        self.dataWin = Data_win()
+        self.dataWin.setupUi(self.window_data, self.tab_len)
+        self.window_data.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'data_2.png'))
 
         """tlacitko STart/STOP --------- tlacitko CONNECT """
         self.butt_start = QtWidgets.QPushButton(self.centralwidget)
@@ -431,11 +440,29 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             if self.in_mode == 'DC':
                 scale_back = 100000
             else:
-                scale_back = 1
+                scale_back = 1000
             sum_data = float(data_list[0])/scale_back
-            x_data = float(data_list[1])/scale_back
+            x_data = (-1)*float(data_list[1])/scale_back    #-1 korekce znamenka software fix
             y_data = float(data_list[2])/scale_back
             print(sum_data, x_data, y_data)  # vypis do konzole debugging
+            """------COM data display ---------"""
+            self.com_sum_data = np.append(self.com_sum_data, sum_data)
+            self.com_x_data = np.append(self.com_x_data, x_data)
+            self.com_y_data = np.append(self.com_y_data, y_data)
+
+            if len(self.com_sum_data) > (self.tab_len):  # zobrazeni max "10" minulych prvku
+                self.com_sum_data = np.delete(self.com_sum_data, 0)
+                self.com_x_data = np.delete(self.com_x_data, 0)
+                self.com_y_data = np.delete(self.com_y_data, 0)
+
+            for x in range(self.tab_len):
+                self.dataWin.tableWidget.setItem((self.tab_len - 1) - x, 0,
+                                         QTableWidgetItem(format(self.com_sum_data[x], '.4f')))
+                self.dataWin.tableWidget.setItem((self.tab_len - 1) - x, 1,
+                                         QTableWidgetItem(format(self.com_x_data[x], '.4f')))
+                self.dataWin.tableWidget.setItem((self.tab_len - 1) - x, 2,
+                                         QTableWidgetItem(format(self.com_y_data[x], '.4f')))
+
             if 0.9*sum_data>(x_data + y_data):
                 self.statusBar().showMessage("Out of range !!!", 3000)  #laser mimo sensor
 
@@ -549,6 +576,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def prefTxt(self):
         self.window_txt.show()
+    def prefData(self):
+        self.window_data.show()
 
 
     """  ------------------ funkce z Menu --------------------"""
@@ -557,6 +586,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.s.close()
         except:
             pass
+        self.window_data.close()
         self.window_txt.close()
         self.window.close()
         self.close()
