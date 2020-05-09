@@ -1,4 +1,5 @@
 
+
 from __future__ import unicode_literals
 import sys
 import os
@@ -115,7 +116,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(40, 510, 400, 300))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
 
-        self.x_time = MplTwo(self.verticalLayoutWidget_2, width=3, height=2, dpi=90)  # dc - graf XY
+        self.x_time= MplTwo(self.verticalLayoutWidget_2, width=3, height=2, dpi=90)  # dc - graf XY
 
         font_time = QtGui.QFont()
         font_time.setPointSize(9)
