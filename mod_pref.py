@@ -14,7 +14,7 @@ class Preferences_win(object):
         self.max_tab_len = 5000  # delka tabulky
         self.min_tab_len = 1
         self.max_time = 10000    #update delay
-        self.min_time = 1
+        self.min_time = 110
         self.max_d_len = 500000   #casova osa
         self.min_d_len = 5
         self.max_freq = 120000  # AC frekvence

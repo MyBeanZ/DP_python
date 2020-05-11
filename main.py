@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import sys
 import os
 import matplotlib
-
+from timeit import default_timer as timer   #vypocet doby vykresleni
 matplotlib.use('Qt5Agg')  #Agg je renderer - vykreslujici process - moznosti WXAgg, GTKAgg, QT4Agg
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
@@ -27,13 +27,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.setGeometry(300, 130, 900, 880)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setWindowTitle("PSD - test")
+        self.setWindowTitle("PSD - position sensing detector")
 
         scriptDir = os.path.dirname(os.path.realpath(__file__))
         self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'logo_2.ico'))
 
         """ --------------------- PROMENNE ------------------------"""
-        self.s_time = 33  #perioda vzorkovani
+        self.s_time = 110  #perioda vzorkovani - 15ms waiting time
         self.port_name = 'COM5'
         self.disp_set = 'rel' # / 'abs'
         self.d_len = 100
@@ -49,6 +49,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.con_enable = True
         self.carry_f = 100000
         self.distance = 0
+        self.delay = 105
 
         self.com_sum_data = np.zeros(self.tab_len)
         self.com_x_data = np.zeros(self.tab_len)
@@ -263,6 +264,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     """-----------------------------------FUNKCE/METODY TRID GUI ----------------------------------------------------"""
     """ FCE - periodicky volana s casovacem"""
     def Time_update(self):
+        if self.draw_enable == 1:
+            start = timer()
         self.abs_check()   #abs/rel
         self.mode_check()  #correlation/RMS
         self.factor_check()
@@ -275,23 +278,63 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.y_time.update_figure_two()
         self.update_data()
         self.read_data()
+        if self.draw_enable == 1:
+            end = timer()
+            print(end - start)
 
     def update_data(self):  # fce, ktera aktualizuje parametry GUI (TABULKA, PROMENNE, LABELY)
+
         """AKTUALIZACE promennych z preferences"""
         """         Adaptivni osa Time      """
         if (self.d_len != self.prefWin.p_d_len) or (self.s_time != self.prefWin.p_s_time):  # prekeresleni a ukladani pouze pri zmene
-            self.d_len = self.prefWin.p_d_len
+
             self.s_time = self.prefWin.p_s_time  # cas pro rychlost cteni
             self.x_time.s_time = self.prefWin.p_s_time  # cas pro grafy Time
             self.y_time.s_time = self.prefWin.p_s_time
             self.x_time.d_len = self.d_len  # pocet vzorku pro grafy Time
             self.y_time.d_len = self.d_len
 
-            if (self.d_len*self.s_time) > 9000:
+            if self.d_len != self.prefWin.p_d_len:
+                if self.prefWin.p_d_len < 90000:
+                    self.delay = 105
+                    self.prefWin.min_time = 105+5
+                    self.s_time = 105+5     #nastavení na nejnižší možnou
+                    self.prefWin.p_s_time = self.s_time
+                    self.prefWin.label_val_time.setText(str(self.s_time) + " ms")
+                    self.prefWin.text_time.setPlaceholderText(
+                        "Max:" + str(self.prefWin.max_time) + ", Min: " + str(self.prefWin.min_time))
+                else:
+                    self.delay = int(0.0002*self.prefWin.p_d_len + 102.97)
+                    self.prefWin.min_time = self.delay + 5
+                    self.s_time = self.delay + 5  # nastavení na nejnižší možnou
+                    self.prefWin.p_s_time = self.s_time
+                    self.prefWin.label_val_time.setText(str(self.s_time) + " ms")
+                    self.prefWin.text_time.setPlaceholderText(
+                        "Max:" + str(self.prefWin.max_time) + ", Min: " + str(self.prefWin.min_time))
+
+            self.d_len = self.prefWin.p_d_len
+            test = self.d_len*self.s_time
+            if (test > 9*1000) and (test < 20*60*1000):      #9 s -> 20 min
                 self.time_label_Y.setText("Time [s]")
                 self.time_label_x.setText("Time [s]")
                 self.x_time.s_time = self.prefWin.p_s_time/1000  # cas pro grafy Time
                 self.y_time.s_time = self.prefWin.p_s_time/1000
+            elif (test >= 20*60*1000) and (test < 120*60*1000):      # 20min -> 120min
+                self.time_label_Y.setText("Time [min]")
+                self.time_label_x.setText("Time [min]")
+                self.x_time.s_time = self.prefWin.p_s_time/(1000*60)  # cas pro grafy Time
+                self.y_time.s_time = self.prefWin.p_s_time/(1000*60)
+            elif (test >= 120*60*1000) and (test < 24*60*60*1000):      # 120min -> 24hod
+                self.time_label_Y.setText("Time [h]")
+                self.time_label_x.setText("Time [h]")
+                self.x_time.s_time = self.prefWin.p_s_time/(1000*60*60)  # cas pro grafy Time
+                self.y_time.s_time = self.prefWin.p_s_time/(1000*60*60)
+            elif test >= 24*60*60*1000 :      # 300min -> 24hod
+                self.time_label_Y.setText("Time [days]")
+                self.time_label_x.setText("Time [days]")
+                self.x_time.s_time = self.prefWin.p_s_time/(1000*60*60*24)  # cas pro grafy Time
+                self.y_time.s_time = self.prefWin.p_s_time/(1000*60*60*24)
+
             else:
                 self.time_label_Y.setText("Time [ms]")
                 self.time_label_x.setText("Time [ms]")
@@ -317,11 +360,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.tableWidget.setItem((self.quad.tab_len-1) - x, 0, QTableWidgetItem(format(self.quad.x_old[x], '.4f')))
             self.tableWidget.setItem((self.quad.tab_len-1) - x, 1, QTableWidgetItem(format(self.quad.y_old[x], '.4f')))
 
+        self.timer.setInterval(self.s_time - self.delay)
         """Aktualizace dat pro vytvoreni TXT"""
         self.txtWin.data_test_x = self.x_time.x_y_old
         self.txtWin.data_test_y = self.y_time.x_y_old
 
-        self.timer.setInterval(self.s_time)
+
     """v main tride resim ciste zmenu rozmeru x a y - kalibrace v preferences"""
 
     def abs_check(self):
@@ -352,17 +396,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.quad.frame_y1 = [self.val_343, -self.val_343]
             self.quad.frame_y2 = [0, 0]
             self.quad.frame_x2 = [self.val_343, -self.val_343]
-
+            self.quad.disp_set = self.prefWin.p_disp_set     #ulozeni do quad, tak aby ne/zobrazoval kruh
             self.clear()
-            # self.quad.x_old = np.zeros(self.tab_len)     #  Nulovani garfu a tabulky
-            # self.quad.y_old = np.zeros(self.tab_len)
-            # self.x_time.x_y_old = np.zeros(self.d_len)
-            # self.y_time.x_y_old = np.zeros(self.d_len)
-            # self.quad.X_data = 0
-            # self.quad.Y_data = 0
-            # self.x_time.x_y_new = 0
-            # self.y_time.x_y_new = 0
-
             self.disp_set = self.prefWin.p_disp_set  # --- ulozeni param do MAIn - abs/rel
             self.quad.disp_set_plt = self.prefWin.p_disp_set
             self.x_time.disp_set_plt = self.prefWin.p_disp_set
@@ -439,7 +474,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             data_str = data.decode("utf-8")
             data_list = data_str.rsplit(" ")
             if self.in_mode == 'DC':
-                scale_back = 100000
+                scale_back = 100000   #ve firmwaru násobím 100000
             else:
                 scale_back = 1000
             sum_data = float(data_list[0])/scale_back
@@ -464,8 +499,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.dataWin.tableWidget.setItem((self.tab_len - 1) - x, 2,
                                          QTableWidgetItem(format(self.com_y_data[x], '.4f')))
 
-            if 0.9*sum_data>(x_data + y_data):
-                self.statusBar().showMessage("Out of range !!!", 3000)  #laser mimo sensor
+            # if 0.9*sum_data>(x_data + y_data):
+            #     self.statusBar().showMessage("Out of range !!!", 3000)  #laser mimo sensor
 
             if sum_data == 0:  #ochrana deleni nulou
                 x_div = 0
@@ -474,15 +509,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 x_div = (x_data/sum_data)
                 y_div = (y_data/sum_data)
 
-            if self.disp_set == 'abs':
-                val_343 = 3.43
+            if self.disp_set == 'abs':      #pro vykresleni v rel ; x_scale,y_scale= 1
+                y_scale = self.spot_rad_y
+                x_scale = self.spot_rad_x
             else:
-                val_343 = 1
+                y_scale = 1
+                x_scale = 1
 
-            self.x_time.x_y_new = x_div * val_343 * self.cal_factor_x
-            self.y_time.x_y_new = y_div * val_343 * self.cal_factor_y
-            self.quad.X_data = x_div* val_343 * self.cal_factor_x
-            self.quad.Y_data = y_div* val_343 * self.cal_factor_y
+            self.x_time.x_y_new = x_div * x_scale * self.cal_factor_x
+            self.y_time.x_y_new = y_div * y_scale * self.cal_factor_y
+            self.quad.X_data = x_div* x_scale * self.cal_factor_x
+            self.quad.Y_data = y_div* y_scale * self.cal_factor_y
         except:
             self.statusBar().showMessage("Unable to read - Disconnected", 3000)
             self.lab_stat.setText("Disconnected")
@@ -520,7 +557,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 #self.s = serial.Serial(self.port_name, baudrate=115200, timeout=None, bytesize=8, parity='N', rtscts=0)
                 self.s = serial.Serial(self.port_name, baudrate=115200, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
                 print(self.s.name)
-                self.timer.start(self.s_time)
+                self.timer.start(self.s_time-self.delay)
                 stat_con = "Connected to: " + self.s.name
                 self.statusBar().showMessage(self.s.name, 3000)
                 self.butt_start.setEnabled(True)
@@ -609,8 +646,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
 qApp = QtWidgets.QApplication(sys.argv)
-aw = ApplicationWindow()
+main_win = ApplicationWindow()
 #aw.setWindowTitle("%s" % progname)  # nastavi titulku na nazev souboru
-aw.show()
+main_win.show()
 sys.exit(qApp.exec_())
 #qApp.exec_()

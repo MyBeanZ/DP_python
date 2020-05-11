@@ -28,6 +28,9 @@ class MyMplCanvas(FigureCanvas):
         self.disp_set_plt = 'rel'
         self.val_343 = 1
         self.p_lim = 1.3
+        self.spot_rad_x = 1/3.43
+        self.spot_rad_y = 1 / 3.43
+        self.disp_set = 'rel'
 
 
     def compute_initial_figure(self):
@@ -45,8 +48,6 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
         self.tab_len = 30
         self.x_old = np.zeros(self.tab_len)
         self.y_old = np.zeros(self.tab_len)
-        self.spot_rad_x = 1/3.43
-        self.spot_rad_y = 1 / 3.43
         self.frame_x = [self.val_343, -self.val_343, -self.val_343, self.val_343, self.val_343]
         self.frame_y = [-self.val_343, -self.val_343, self.val_343, self.val_343, -self.val_343]
         self.frame_x1 = [0, 0]
@@ -70,24 +71,33 @@ class MplQuad(MyMplCanvas):  # --------------------------------------------- HLA
             self.y_old = np.delete(self.y_old, 0)
 
         self.axes.cla()
-        self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
-        self.axes.plot(self.frame_x1, self.frame_y1, color='#8f8483', linestyle='--', linewidth=1)
-        self.axes.plot(self.frame_x2, self.frame_y2, color='#8f8483', linestyle='--', linewidth=1)
-
-        self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle = ':', label='stare pozice', markersize=2)
+        self.axes.plot(self.x_old, self.y_old, color='#f2c16d', marker='o', linestyle=':', label='stare pozice',
+                       markersize=2)
         self.axes.plot(self.X_data, self.Y_data, color='r', marker='o', label='aktualni pozice', markersize=2)
-        theta = np.linspace(0, 2 * np.pi, 100)
 
-        #r = np.sqrt(self.spot_width)
-        r = self.spot_rad_x
-        x1 = r * np.cos(theta) + self.X_data
-        r = self.spot_rad_y
-        x2 = r * np.sin(theta) + self.Y_data
-        self.axes.plot(x1, x2, linestyle=':', color='r', markersize=0.6)
+        if self.disp_set == 'abs':
+            self.axes.plot(self.frame_x, self.frame_y, color='#8f8483', linestyle='--', linewidth=1)
+            self.axes.plot(self.frame_x1, self.frame_y1, color='#8f8483', linestyle='--', linewidth=1)
+            self.axes.plot(self.frame_x2, self.frame_y2, color='#8f8483', linestyle='--', linewidth=1)
+
+            theta = np.linspace(0, 2 * np.pi, 100)
+
+            #r = np.sqrt(self.spot_width)
+            r = self.spot_rad_x
+            x1 = r * np.cos(theta) + self.X_data
+            r = self.spot_rad_y
+            x2 = r * np.sin(theta) + self.Y_data
+            self.axes.plot(x1, x2, linestyle=':', color='r', markersize=0.6)
+
+
+        else:
+            self.axes.plot(self.frame_x, self.frame_y, color='r', linestyle='-', linewidth=1)
+            self.axes.plot(self.frame_x1, self.frame_y1, color='r', linestyle='--', linewidth=1)
+            self.axes.plot(self.frame_x2, self.frame_y2, color='r', linestyle='--', linewidth=1)
+
         self.axes.set_xlim(-self.p_lim, self.p_lim)
         self.axes.set_ylim(-self.p_lim, self.p_lim)
         self.draw()
-
 
 class MplTwo(MyMplCanvas):   # ----------------------- DOLNI GRAFY -------------------------#
     def __init__(self, *args, **kwargs):
