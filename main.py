@@ -61,7 +61,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.file_menu.addAction('&Preferences', self.prefClick,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_R)
         self.file_menu.addAction('&Save data', self.prefTxt,
-                                 QtCore.Qt.CTRL + QtCore.Qt.Key_T)
+                                 QtCore.Qt.CTRL + QtCore.Qt.Key_S)
         self.file_menu.addAction('&Display COM data', self.prefData,
                                  QtCore.Qt.CTRL + QtCore.Qt.Key_D)
         self.file_menu.addAction('&Quit', self.fileQuit,
@@ -247,6 +247,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.label_x_y.setFont(font_x_y)
         self.label_x_y.setText("X - Y ")
         self.label_x_y.setGeometry(x_y_line_coor[0]- 60, x_y_line_coor[1], 70, 20)
+        """optical power ---------- mW"""
+        self.label_opt_pow = QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
+        #self.label_opt_pow.setFont(font_x_y)
+        self.label_opt_pow.setText("Optical power [\u03BCW]:")
+        self.label_opt_pow.setGeometry(x_y_line_coor[0]- 60, x_y_line_coor[1]+440, 130, 20)
+
+        self.label_opt_pow_val= QtWidgets.QLabel(self.centralwidget)  # self pred label kvuli pristupu z cele tridy
+        # self.label_opt_pow.setFont(font_x_y)
+        self.label_opt_pow_val.setText("Not availible")
+        self.label_opt_pow_val.setGeometry(x_y_line_coor[0] - 60+130, x_y_line_coor[1] + 440, 150, 20)
 
         """ ----- DATA X Y prompt (table)  ------"""
         self.tableWidget = QTableWidget(self.centralwidget)
@@ -364,8 +374,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """Aktualizace dat pro vytvoreni TXT"""
         self.txtWin.data_test_x = self.x_time.x_y_old
         self.txtWin.data_test_y = self.y_time.x_y_old
-
-
     """v main tride resim ciste zmenu rozmeru x a y - kalibrace v preferences"""
 
     def abs_check(self):
@@ -481,6 +489,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             x_data = (-1)*float(data_list[1])/scale_back    #-1 korekce znamenka software fix
             y_data = float(data_list[2])/scale_back
             print(sum_data, x_data, y_data)  # vypis do konzole debugging
+
+            """vypocet intenzity-------"""
+            if (self.in_mode == 'DC') and (self.draw_enable == 1):
+                opt_pow = (sum_data*0.6313)-0.0234
+                self.label_opt_pow_val.setText(str(format(opt_pow, '.4f')))
+            else:
+                self.label_opt_pow_val.setText("Not availible")
+
             """------COM data display ---------"""
             self.com_sum_data = np.append(self.com_sum_data, sum_data)
             self.com_x_data = np.append(self.com_x_data, x_data)
